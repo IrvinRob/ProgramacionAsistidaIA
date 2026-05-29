@@ -1,6 +1,6 @@
-//asignamos valor a la variable edad
+// Script para verificar si es mayor o menor de edad
 let edad = prompt("Ingresa tu edad:");
-//comprobamos si es mayor de edad
+
 if (edad >= 18) {
     console.log("Eres mayor de edad");
 } else {
