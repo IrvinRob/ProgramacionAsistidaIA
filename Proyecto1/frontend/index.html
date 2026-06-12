@@ -10,8 +10,100 @@
   <div class="container mx-auto px-4 py-8 max-w-2xl">
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">📅 Agenda Diaria</h1>
     
+    <!-- Sección de autenticación -->
+    <div id="authSection" class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div id="loginForm">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Iniciar Sesión</h2>
+        <form id="loginFormElement" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
+            <input 
+              type="email" 
+              id="loginEmail" 
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="tu@email.com"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Contraseña</label>
+            <input 
+              type="password" 
+              id="loginPassword" 
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
+            >
+          </div>
+          <button 
+            type="submit"
+            class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+          >
+            Iniciar Sesión
+          </button>
+        </form>
+        <p class="text-center mt-4 text-sm text-gray-600">
+          ¿No tienes cuenta? 
+          <button onclick="showRegisterForm()" class="text-blue-500 hover:text-blue-700 font-medium">Regístrate</button>
+        </p>
+      </div>
+      
+      <div id="registerForm" class="hidden">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Registrar Usuario</h2>
+        <form id="registerFormElement" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
+            <input 
+              type="text" 
+              id="registerNombre" 
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Tu nombre"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
+            <input 
+              type="email" 
+              id="registerEmail" 
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="tu@email.com"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Contraseña</label>
+            <input 
+              type="password" 
+              id="registerPassword" 
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
+            >
+          </div>
+          <button 
+            type="submit"
+            class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
+          >
+            Registrarse
+          </button>
+        </form>
+        <p class="text-center mt-4 text-sm text-gray-600">
+          ¿Ya tienes cuenta? 
+          <button onclick="showLoginForm()" class="text-blue-500 hover:text-blue-700 font-medium">Inicia Sesión</button>
+        </p>
+      </div>
+      
+      <div id="userSection" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">Bienvenido, <span id="userName"></span></h2>
+          <button onclick="logout()" class="text-red-500 hover:text-red-700 font-medium">Cerrar Sesión</button>
+        </div>
+      </div>
+    </div>
+    
     <!-- Formulario para agregar evento -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div id="eventFormSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Nuevo Evento</h2>
       <form id="eventoForm" class="space-y-4">
         <div>
@@ -52,7 +144,7 @@
     </div>
     
     <!-- Lista de eventos -->
-    <div class="bg-white rounded-lg shadow-md p-6">
+    <div id="eventListSection" class="bg-white rounded-lg shadow-md p-6 hidden">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Mis Eventos</h2>
       <div id="eventosList" class="space-y-3">
         <p class="text-gray-500 text-center py-4">No hay eventos aún</p>
