@@ -21,20 +21,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Ruta raíz
+// Ruta raíz - servir frontend
 app.get('/', (req, res) => {
-  res.json({
-    mensaje: 'API de Agenda Diaria',
-    rutas_disponibles: {
-      saludar: '/api/saludo',
-      probar_supabase: '/api/test-supabase',
-      eventos: '/api/eventos',
-      auth: {
-        registro: '/api/auth/register',
-        login: '/api/auth/login'
-      }
-    }
-  });
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 //mi endpoint de prueba
