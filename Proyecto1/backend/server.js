@@ -181,14 +181,7 @@ app.get('/api/eventos', async (req, res) => {
   try {
     const { data: eventos, error } = await supabase
       .from('eventos')
-      .select(`
-        *,
-        usuarios!left (
-          id,
-          email,
-          nombre
-        )
-      `)
+      .select('*')
       .order('fecha', { ascending: true });
     
     console.log('Eventos obtenidos:', JSON.stringify(eventos, null, 2));

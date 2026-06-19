@@ -145,32 +145,6 @@ document.getElementById('registerFormElement').addEventListener('submit', async 
   }
 });
 
-// Manejar formulario de recuperación de contraseña
-document.getElementById('recoverPasswordFormElement').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('recoverEmail').value;
-  
-  try {
-    const response = await fetch(`${AUTH_URL}/recover-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email })
-    });
-    
-    const data = await response.json();
-    
-    alert(data.mensaje);
-    showLoginForm();
-    document.getElementById('recoverPasswordFormElement').reset();
-  } catch (error) {
-    console.error('Error en la recuperación:', error);
-    alert('Error al conectar con el servidor');
-  }
-});
-
 // Cerrar sesión
 function logout() {
   localStorage.removeItem('usuario');
@@ -297,8 +271,9 @@ function mostrarEventos(eventos) {
   
   lista.innerHTML = eventos.map(evento => {
     const esCreador = usuario && usuario.id === evento.usuario_id;
-    const nombreUsuario = evento.usuarios ? (evento.usuarios.nombre || evento.usuarios.email) : 'Usuario';
-    const colorBadge = getUserColor(evento.usuarios ? evento.usuarios.email : '');
+    // Por ahora mostramos un nombre genérico ya que no tenemos el join con usuarios
+    const nombreUsuario = 'Usuario';
+    const colorBadge = '#e5e7eb'; // Color gris por defecto
     
     return `
     <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow relative">
