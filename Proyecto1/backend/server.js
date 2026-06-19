@@ -138,12 +138,57 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// POST - Recuperar contraseña
+app.post('/api/auth/recover-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ mensaje: 'Email es requerido' });
+    }
+    
+    // Verificar si el usuario existe
+    const { data: user, error } = await supabase
+      .from('usuarios')
+      .select('email')
+      .eq('email', email)
+      .single();
+    
+    if (error || !user) {
+      // Por seguridad, no revelamos si el email existe o no
+      return res.json({ 
+        mensaje: 'Si el email está registrado, recibirás un enlace para recuperar tu contraseña' 
+      });
+    }
+    
+    // Generar token de recuperación (en un sistema real, esto sería más seguro)
+    const resetToken = Buffer.from(`${email}-${Date.now()}`).toString('base64');
+    
+    // En un sistema real, aquí enviarías un email con el enlace de recuperación
+    // Por ahora, simulamos el envío devolviendo el token
+    res.json({ 
+      mensaje: 'Si el email está registrado, recibirás un enlace para recuperar tu contraseña',
+      // Solo para desarrollo: en producción no devolver el token
+      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+    });
+  } catch (err) {
+    res.status(500).json({ mensaje: 'Error al procesar recuperación', error: err.message });
+  }
+});
+
 // GET - Obtener todos los eventos
 app.get('/api/eventos', async (req, res) => {
   try {
     const { data: eventos, error } = await supabase
       .from('eventos')
-      .select('*')
+      .select(`
+        *,
+        usuarios (
+          id,
+          email,
+          nombre
+        )
+      `)
       .order('fecha', { ascending: true });
     
     if (error) throw error;
@@ -176,16 +221,21 @@ app.get('/api/eventos/:id', async (req, res) => {
 // POST - Crear nuevo evento
 app.post('/api/eventos', async (req, res) => {
   try {
-    const { titulo, fecha, descripcion, latitud, longitud } = req.body;
+    const { titulo, fecha, descripcion, latitud, longitud, usuario_id } = req.body;
     
     if (!titulo || !fecha) {
       return res.status(400).json({ mensaje: 'Título y fecha son requeridos' });
     }
     
+    if (!usuario_id) {
+      return res.status(400).json({ mensaje: 'Usuario ID es requerido' });
+    }
+    
     const eventoData = {
       titulo,
       fecha,
-      descripcion: descripcion || ''
+      descripcion: descripcion || '',
+      usuario_id
     };
     
     // Agregar coordenadas si se proporcionan
@@ -211,11 +261,34 @@ app.post('/api/eventos', async (req, res) => {
 // PUT - Actualizar evento
 app.put('/api/eventos/:id', async (req, res) => {
   try {
-    const { titulo, fecha, descripcion } = req.body;
+    const { titulo, fecha, descripcion, latitud, longitud, usuario_id } = req.body;
+    
+    // Verificar que el usuario es el creador del evento
+    const { data: evento, error: checkError } = await supabase
+      .from('eventos')
+      .select('usuario_id')
+      .eq('id', req.params.id)
+      .single();
+    
+    if (checkError || !evento) {
+      return res.status(404).json({ mensaje: 'Evento no encontrado' });
+    }
+    
+    if (evento.usuario_id !== usuario_id) {
+      return res.status(403).json({ mensaje: 'No tienes permiso para modificar este evento' });
+    }
+    
+    const updateData = { titulo, fecha, descripcion };
+    
+    // Agregar coordenadas si se proporcionan
+    if (latitud !== undefined && longitud !== undefined) {
+      updateData.latitud = latitud;
+      updateData.longitud = longitud;
+    }
     
     const { data: eventoActualizado, error } = await supabase
       .from('eventos')
-      .update({ titulo, fecha, descripcion })
+      .update(updateData)
       .eq('id', req.params.id)
       .select()
       .single();
@@ -233,6 +306,23 @@ app.put('/api/eventos/:id', async (req, res) => {
 // DELETE - Eliminar evento
 app.delete('/api/eventos/:id', async (req, res) => {
   try {
+    const { usuario_id } = req.body;
+    
+    // Verificar que el usuario es el creador del evento
+    const { data: evento, error: checkError } = await supabase
+      .from('eventos')
+      .select('usuario_id')
+      .eq('id', req.params.id)
+      .single();
+    
+    if (checkError || !evento) {
+      return res.status(404).json({ mensaje: 'Evento no encontrado' });
+    }
+    
+    if (evento.usuario_id !== usuario_id) {
+      return res.status(403).json({ mensaje: 'No tienes permiso para eliminar este evento' });
+    }
+    
     const { error } = await supabase
       .from('eventos')
       .delete()

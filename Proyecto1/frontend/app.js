@@ -45,11 +45,19 @@ function initMap() {
 function showLoginForm() {
   document.getElementById('loginForm').classList.remove('hidden');
   document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('recoverPasswordForm').classList.add('hidden');
 }
 
 function showRegisterForm() {
   document.getElementById('loginForm').classList.add('hidden');
   document.getElementById('registerForm').classList.remove('hidden');
+  document.getElementById('recoverPasswordForm').classList.add('hidden');
+}
+
+function showRecoverPassword() {
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('recoverPasswordForm').classList.remove('hidden');
 }
 
 function showAuthenticatedUI(usuario) {
@@ -67,6 +75,7 @@ function showAuthenticatedUI(usuario) {
 function showUnauthenticatedUI() {
   document.getElementById('loginForm').classList.remove('hidden');
   document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('recoverPasswordForm').classList.add('hidden');
   document.getElementById('userSection').classList.add('hidden');
   document.getElementById('eventFormSection').classList.add('hidden');
   document.getElementById('eventListSection').classList.add('hidden');
@@ -136,6 +145,32 @@ document.getElementById('registerFormElement').addEventListener('submit', async 
   }
 });
 
+// Manejar formulario de recuperación de contraseña
+document.getElementById('recoverPasswordFormElement').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const email = document.getElementById('recoverEmail').value;
+  
+  try {
+    const response = await fetch(`${AUTH_URL}/recover-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email })
+    });
+    
+    const data = await response.json();
+    
+    alert(data.mensaje);
+    showLoginForm();
+    document.getElementById('recoverPasswordFormElement').reset();
+  } catch (error) {
+    console.error('Error en la recuperación:', error);
+    alert('Error al conectar con el servidor');
+  }
+});
+
 // Cerrar sesión
 function logout() {
   localStorage.removeItem('usuario');
@@ -158,13 +193,22 @@ function checkSession() {
 document.getElementById('eventoForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
+  const usuario = JSON.parse(localStorage.getItem('usuario'));
   const titulo = document.getElementById('titulo').value;
   const fecha = document.getElementById('fecha').value;
   const descripcion = document.getElementById('descripcion').value;
   const latitud = document.getElementById('latitud').value;
   const longitud = document.getElementById('longitud').value;
   
-  const eventData = { titulo, fecha, descripcion };
+  const form = document.getElementById('eventoForm');
+  const editingId = form.dataset.editingId;
+  
+  const eventData = { 
+    titulo, 
+    fecha, 
+    descripcion,
+    usuario_id: usuario.id 
+  };
   
   // Solo agregar coordenadas si se seleccionaron
   if (latitud && longitud) {
@@ -173,16 +217,31 @@ document.getElementById('eventoForm').addEventListener('submit', async (e) => {
   }
   
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(eventData)
-    });
+    let response;
+    if (editingId) {
+      // Modo edición
+      response = await fetch(`${API_URL}/${editingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(eventData)
+      });
+    } else {
+      // Modo creación
+      response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(eventData)
+      });
+    }
     
     if (response.ok) {
       document.getElementById('eventoForm').reset();
+      delete form.dataset.editingId;
+      
       // Limpiar marcador del mapa
       if (marker) {
         map.removeLayer(marker);
@@ -190,10 +249,18 @@ document.getElementById('eventoForm').addEventListener('submit', async (e) => {
       }
       document.getElementById('latitud').value = '';
       document.getElementById('longitud').value = '';
+      
+      // Restaurar texto del botón
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.textContent = 'Agregar Evento';
+      
       cargarEventos();
+    } else {
+      const data = await response.json();
+      alert(data.mensaje || 'Error al guardar evento');
     }
   } catch (error) {
-    console.error('Error al crear evento:', error);
+    console.error('Error al guardar evento:', error);
   }
 });
 
@@ -208,18 +275,39 @@ async function cargarEventos() {
   }
 }
 
+// Función para generar color basado en el email del usuario
+function getUserColor(email) {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = email.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 85%)`;
+}
+
 // Mostrar eventos en el DOM
 function mostrarEventos(eventos) {
   const lista = document.getElementById('eventosList');
+  const usuario = JSON.parse(localStorage.getItem('usuario'));
   
   if (eventos.length === 0) {
     lista.innerHTML = '<p class="text-gray-500 text-center py-4">No hay eventos aún</p>';
     return;
   }
   
-  lista.innerHTML = eventos.map(evento => `
-    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div class="flex justify-between items-start">
+  lista.innerHTML = eventos.map(evento => {
+    const esCreador = usuario && usuario.id === evento.usuario_id;
+    const nombreUsuario = evento.usuarios ? (evento.usuarios.nombre || evento.usuarios.email) : 'Usuario';
+    const colorBadge = getUserColor(evento.usuarios ? evento.usuarios.email : '');
+    
+    return `
+    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow relative">
+      <div class="absolute top-2 left-2">
+        <span class="px-2 py-1 rounded-full text-xs font-medium text-gray-700" style="background-color: ${colorBadge}">
+          ${nombreUsuario}
+        </span>
+      </div>
+      <div class="flex justify-between items-start pt-6">
         <div class="flex-1">
           <h3 class="font-semibold text-gray-800">${evento.titulo}</h3>
           <p class="text-sm text-gray-500">📅 ${evento.fecha}</p>
@@ -233,31 +321,89 @@ function mostrarEventos(eventos) {
           ` : ''}
         </div>
         <div class="flex gap-2 ml-4">
-          <button 
-            onclick="eliminarEvento('${evento.id}')"
-            class="text-red-500 hover:text-red-700 text-sm font-medium"
-          >
-            Eliminar
-          </button>
+          ${esCreador ? `
+            <button 
+              onclick="editarEvento('${evento.id}')"
+              class="text-blue-500 hover:text-blue-700 text-sm font-medium"
+            >
+              Editar
+            </button>
+            <button 
+              onclick="eliminarEvento('${evento.id}')"
+              class="text-red-500 hover:text-red-700 text-sm font-medium"
+            >
+              Eliminar
+            </button>
+          ` : ''}
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // Eliminar evento
 async function eliminarEvento(id) {
   if (!confirm('¿Estás seguro de eliminar este evento?')) return;
   
+  const usuario = JSON.parse(localStorage.getItem('usuario'));
+  
   try {
     const response = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ usuario_id: usuario.id })
     });
     
     if (response.ok) {
       cargarEventos();
+    } else {
+      const data = await response.json();
+      alert(data.mensaje || 'Error al eliminar evento');
     }
   } catch (error) {
     console.error('Error al eliminar evento:', error);
+  }
+}
+
+// Editar evento
+async function editarEvento(id) {
+  try {
+    const response = await fetch(`${API_URL}/${id}`);
+    const evento = await response.json();
+    
+    // Llenar el formulario con los datos del evento
+    document.getElementById('titulo').value = evento.titulo;
+    document.getElementById('fecha').value = evento.fecha;
+    document.getElementById('descripcion').value = evento.descripcion || '';
+    
+    // Si tiene ubicación, mostrarla en el mapa
+    if (evento.latitud && evento.longitud) {
+      document.getElementById('latitud').value = evento.latitud;
+      document.getElementById('longitud').value = evento.longitud;
+      
+      if (map) {
+        map.setView([evento.latitud, evento.longitud], 14);
+        if (marker) {
+          map.removeLayer(marker);
+        }
+        marker = L.marker([evento.latitud, evento.longitud]).addTo(map);
+      }
+    }
+    
+    // Cambiar el comportamiento del formulario para actualizar en lugar de crear
+    const form = document.getElementById('eventoForm');
+    form.dataset.editingId = id;
+    
+    // Cambiar el texto del botón
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Actualizar Evento';
+    
+    // Scroll al formulario
+    document.getElementById('eventFormSection').scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    console.error('Error al cargar evento para editar:', error);
   }
 }
