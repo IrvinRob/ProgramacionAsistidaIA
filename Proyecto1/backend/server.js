@@ -183,7 +183,7 @@ app.get('/api/eventos', async (req, res) => {
       .from('eventos')
       .select(`
         *,
-        usuarios (
+        usuarios!left (
           id,
           email,
           nombre
