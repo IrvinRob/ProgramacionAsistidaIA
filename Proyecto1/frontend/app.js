@@ -1,5 +1,5 @@
-const API_URL = 'http://localhost:3000/api/eventos';
-const AUTH_URL = 'http://localhost:3000/api/auth';
+const API_URL = '/api/eventos';
+const AUTH_URL = '/api/auth';
 
 // Verificar sesión al iniciar
 document.addEventListener('DOMContentLoaded', () => {
