@@ -1,10 +1,45 @@
 const API_URL = '/api/eventos';
 const AUTH_URL = '/api/auth';
 
+// Variables globales para el mapa
+let map;
+let marker;
+
 // Verificar sesión al iniciar
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
 });
+
+// Inicializar mapa cuando se muestra el formulario de evento
+function initMap() {
+  if (map) return; // Ya está inicializado
+
+  // Centro histórico de Chihuahua: 28.6353, -106.0889
+  const chihuahuaCenter = [28.6353, -106.0889];
+
+  map = L.map('map').setView(chihuahuaCenter, 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Evento de clic en el mapa
+  map.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+
+    // Remover marcador anterior si existe
+    if (marker) {
+      map.removeLayer(marker);
+    }
+
+    // Agregar nuevo marcador
+    marker = L.marker([lat, lng]).addTo(map);
+
+    // Guardar coordenadas en los campos ocultos
+    document.getElementById('latitud').value = lat;
+    document.getElementById('longitud').value = lng;
+  });
+}
 
 // Funciones de UI para autenticación
 function showLoginForm() {
@@ -24,6 +59,9 @@ function showAuthenticatedUI(usuario) {
   document.getElementById('userName').textContent = usuario.nombre || usuario.email;
   document.getElementById('eventFormSection').classList.remove('hidden');
   document.getElementById('eventListSection').classList.remove('hidden');
+  
+  // Inicializar mapa después de mostrar el formulario
+  setTimeout(initMap, 100);
 }
 
 function showUnauthenticatedUI() {
@@ -123,6 +161,16 @@ document.getElementById('eventoForm').addEventListener('submit', async (e) => {
   const titulo = document.getElementById('titulo').value;
   const fecha = document.getElementById('fecha').value;
   const descripcion = document.getElementById('descripcion').value;
+  const latitud = document.getElementById('latitud').value;
+  const longitud = document.getElementById('longitud').value;
+  
+  const eventData = { titulo, fecha, descripcion };
+  
+  // Solo agregar coordenadas si se seleccionaron
+  if (latitud && longitud) {
+    eventData.latitud = parseFloat(latitud);
+    eventData.longitud = parseFloat(longitud);
+  }
   
   try {
     const response = await fetch(API_URL, {
@@ -130,11 +178,18 @@ document.getElementById('eventoForm').addEventListener('submit', async (e) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ titulo, fecha, descripcion })
+      body: JSON.stringify(eventData)
     });
     
     if (response.ok) {
       document.getElementById('eventoForm').reset();
+      // Limpiar marcador del mapa
+      if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+      }
+      document.getElementById('latitud').value = '';
+      document.getElementById('longitud').value = '';
       cargarEventos();
     }
   } catch (error) {
@@ -169,6 +224,13 @@ function mostrarEventos(eventos) {
           <h3 class="font-semibold text-gray-800">${evento.titulo}</h3>
           <p class="text-sm text-gray-500">📅 ${evento.fecha}</p>
           ${evento.descripcion ? `<p class="text-sm text-gray-600 mt-2">${evento.descripcion}</p>` : ''}
+          ${evento.latitud && evento.longitud ? `
+            <p class="text-sm text-gray-600 mt-2">
+              📍 <a href="https://www.google.com/maps?q=${evento.latitud},${evento.longitud}" target="_blank" class="text-blue-500 hover:text-blue-700">
+                Ver ubicación en mapa
+              </a>
+            </p>
+          ` : ''}
         </div>
         <div class="flex gap-2 ml-4">
           <button 

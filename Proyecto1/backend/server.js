@@ -176,15 +176,27 @@ app.get('/api/eventos/:id', async (req, res) => {
 // POST - Crear nuevo evento
 app.post('/api/eventos', async (req, res) => {
   try {
-    const { titulo, fecha, descripcion } = req.body;
+    const { titulo, fecha, descripcion, latitud, longitud } = req.body;
     
     if (!titulo || !fecha) {
       return res.status(400).json({ mensaje: 'Título y fecha son requeridos' });
     }
     
+    const eventoData = {
+      titulo,
+      fecha,
+      descripcion: descripcion || ''
+    };
+    
+    // Agregar coordenadas si se proporcionan
+    if (latitud !== undefined && longitud !== undefined) {
+      eventoData.latitud = latitud;
+      eventoData.longitud = longitud;
+    }
+    
     const { data: eventoGuardado, error } = await supabase
       .from('eventos')
-      .insert([{ titulo, fecha, descripcion: descripcion || '' }])
+      .insert([eventoData])
       .select()
       .single();
     
