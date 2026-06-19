@@ -184,12 +184,33 @@ app.get('/api/eventos', async (req, res) => {
       .select('*')
       .order('fecha', { ascending: true });
     
-    console.log('Eventos obtenidos:', JSON.stringify(eventos, null, 2));
-    console.log('Error:', error);
-    
     if (error) throw error;
     
-    res.json(eventos || []);
+    // Obtener usuarios por separado
+    const { data: usuarios, error: usuariosError } = await supabase
+      .from('usuarios')
+      .select('id, email, nombre');
+    
+    if (usuariosError) {
+      console.error('Error al obtener usuarios:', usuariosError);
+      // Continuar sin información de usuarios
+    }
+    
+    // Crear mapa de usuarios por ID
+    const usuariosMap = {};
+    if (usuarios) {
+      usuarios.forEach(usuario => {
+        usuariosMap[usuario.id] = usuario;
+      });
+    }
+    
+    // Combinar eventos con información de usuarios
+    const eventosConUsuarios = (eventos || []).map(evento => ({
+      ...evento,
+      usuarios: evento.usuario_id ? usuariosMap[evento.usuario_id] || null : null
+    }));
+    
+    res.json(eventosConUsuarios || []);
   } catch (err) {
     console.error('Error al obtener eventos:', err);
     res.status(500).json({ mensaje: 'Error al obtener eventos' });

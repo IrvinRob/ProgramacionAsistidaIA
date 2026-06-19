@@ -271,9 +271,8 @@ function mostrarEventos(eventos) {
   
   lista.innerHTML = eventos.map(evento => {
     const esCreador = usuario && usuario.id === evento.usuario_id;
-    // Por ahora mostramos un nombre genérico ya que no tenemos el join con usuarios
-    const nombreUsuario = 'Usuario';
-    const colorBadge = '#e5e7eb'; // Color gris por defecto
+    const nombreUsuario = evento.usuarios ? (evento.usuarios.nombre || evento.usuarios.email) : 'Usuario';
+    const colorBadge = evento.usuarios ? getUserColor(evento.usuarios.email) : '#e5e7eb';
     
     return `
     <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow relative">
