@@ -2,14 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Conexión a Supabase
 const supabase = createClient(
@@ -241,6 +245,11 @@ app.delete('/api/eventos/:id', async (req, res) => {
   } catch (err) {
     res.status(500).json({ mensaje: 'Error al eliminar evento' });
   }
+});
+
+// Catch-all para servir el frontend (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Iniciar servidor
