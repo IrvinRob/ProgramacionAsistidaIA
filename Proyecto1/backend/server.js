@@ -191,10 +191,14 @@ app.get('/api/eventos', async (req, res) => {
       `)
       .order('fecha', { ascending: true });
     
+    console.log('Eventos obtenidos:', JSON.stringify(eventos, null, 2));
+    console.log('Error:', error);
+    
     if (error) throw error;
     
     res.json(eventos || []);
   } catch (err) {
+    console.error('Error al obtener eventos:', err);
     res.status(500).json({ mensaje: 'Error al obtener eventos' });
   }
 });
