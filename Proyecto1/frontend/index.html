@@ -7,6 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_cHJvZm91bmQtbGlvbmVzcy03MC5jbGVyay5hY2NvdW50cy5kZXYk"
+    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+    onload="window.Clerk.load()"
+  ></script>
   <style>
     #map {
       height: 300px;
@@ -20,122 +27,15 @@
   <div class="container mx-auto px-4 py-8 max-w-2xl">
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">📅 Agenda Diaria</h1>
     
-    <!-- Sección de autenticación -->
+    <!-- Sección de autenticación con Clerk -->
     <div id="authSection" class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div id="loginForm">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Iniciar Sesión</h2>
-        <form id="loginFormElement" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
-            <input 
-              type="email" 
-              id="loginEmail" 
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="tu@email.com"
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Contraseña</label>
-            <input 
-              type="password" 
-              id="loginPassword" 
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-            >
-          </div>
-          <button 
-            type="submit"
-            class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
-          >
-            Iniciar Sesión
-          </button>
-        </form>
-        <p class="text-center mt-2 text-sm text-gray-600">
-          <button onclick="showRecoverPassword()" class="text-blue-500 hover:text-blue-700 font-medium">¿Olvidaste tu contraseña?</button>
-        </p>
-        <p class="text-center mt-2 text-sm text-gray-600">
-          ¿No tienes cuenta? 
-          <button onclick="showRegisterForm()" class="text-blue-500 hover:text-blue-700 font-medium">Regístrate</button>
-        </p>
+      <div id="clerk-login" class="flex justify-center">
+        <div id="sign-in" class="w-full max-w-md"></div>
       </div>
-      
-      <div id="registerForm" class="hidden">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Registrar Usuario</h2>
-        <form id="registerFormElement" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
-            <input 
-              type="text" 
-              id="registerNombre" 
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Tu nombre"
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
-            <input 
-              type="email" 
-              id="registerEmail" 
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="tu@email.com"
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Contraseña</label>
-            <input 
-              type="password" 
-              id="registerPassword" 
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-            >
-          </div>
-          <button 
-            type="submit"
-            class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
-          >
-            Registrarse
-          </button>
-        </form>
-        <p class="text-center mt-4 text-sm text-gray-600">
-          ¿Ya tienes cuenta? 
-          <button onclick="showLoginForm()" class="text-blue-500 hover:text-blue-700 font-medium">Inicia Sesión</button>
-        </p>
-      </div>
-      
-      <div id="recoverPasswordForm" class="hidden">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Recuperar Contraseña</h2>
-        <form id="recoverPasswordFormElement" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
-            <input 
-              type="email" 
-              id="recoverEmail" 
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="tu@email.com"
-            >
-          </div>
-          <button 
-            type="submit"
-            class="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
-          >
-            Enviar enlace de recuperación
-          </button>
-        </form>
-        <p class="text-center mt-4 text-sm text-gray-600">
-          <button onclick="showLoginForm()" class="text-blue-500 hover:text-blue-700 font-medium">Volver al login</button>
-        </p>
-      </div>
-      
       <div id="userSection" class="hidden">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-700">Bienvenido, <span id="userName"></span></h2>
-          <button onclick="logout()" class="text-red-500 hover:text-red-700 font-medium">Cerrar Sesión</button>
+          <button id="sign-out-btn" class="text-red-500 hover:text-red-700 font-medium">Cerrar Sesión</button>
         </div>
       </div>
     </div>

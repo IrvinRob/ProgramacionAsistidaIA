@@ -1,13 +1,44 @@
-const API_URL = '/api/eventos';
-const AUTH_URL = '/api/auth';
+const API_URL = 'http://localhost:3000/api/eventos';
 
 // Variables globales para el mapa
 let map;
 let marker;
 
 // Verificar sesión al iniciar
-document.addEventListener('DOMContentLoaded', () => {
-  checkSession();
+window.addEventListener('load', async () => {
+  const clerk = window.Clerk;
+  
+  if (!clerk) {
+    console.error('Clerk no está cargado');
+    return;
+  }
+
+  try {
+    await clerk.load();
+
+    if (clerk.user) {
+      // Usuario autenticado
+      showAuthenticatedUI({
+        id: clerk.user.id,
+        email: clerk.user.primaryEmailAddress?.emailAddress,
+        nombre: clerk.user.firstName || clerk.user.primaryEmailAddress?.emailAddress
+      });
+      cargarEventos();
+    } else {
+      // Usuario no autenticado - montar sign-in
+      showUnauthenticatedUI();
+      clerk.mountSignIn(document.getElementById('sign-in'));
+    }
+
+    // Configurar botón de logout
+    document.getElementById('sign-out-btn').addEventListener('click', async () => {
+      await clerk.signOut();
+      showUnauthenticatedUI();
+      clerk.mountSignIn(document.getElementById('sign-in'));
+    });
+  } catch (error) {
+    console.error('Error al inicializar Clerk:', error);
+  }
 });
 
 // Inicializar mapa cuando se muestra el formulario de evento
@@ -41,28 +72,9 @@ function initMap() {
   });
 }
 
-// Funciones de UI para autenticación
-function showLoginForm() {
-  document.getElementById('loginForm').classList.remove('hidden');
-  document.getElementById('registerForm').classList.add('hidden');
-  document.getElementById('recoverPasswordForm').classList.add('hidden');
-}
-
-function showRegisterForm() {
-  document.getElementById('loginForm').classList.add('hidden');
-  document.getElementById('registerForm').classList.remove('hidden');
-  document.getElementById('recoverPasswordForm').classList.add('hidden');
-}
-
-function showRecoverPassword() {
-  document.getElementById('loginForm').classList.add('hidden');
-  document.getElementById('registerForm').classList.add('hidden');
-  document.getElementById('recoverPasswordForm').classList.remove('hidden');
-}
-
+// Funciones de UI para autenticación con Clerk
 function showAuthenticatedUI(usuario) {
-  document.getElementById('loginForm').classList.add('hidden');
-  document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('clerk-login').classList.add('hidden');
   document.getElementById('userSection').classList.remove('hidden');
   document.getElementById('userName').textContent = usuario.nombre || usuario.email;
   document.getElementById('eventFormSection').classList.remove('hidden');
@@ -73,101 +85,26 @@ function showAuthenticatedUI(usuario) {
 }
 
 function showUnauthenticatedUI() {
-  document.getElementById('loginForm').classList.remove('hidden');
-  document.getElementById('registerForm').classList.add('hidden');
-  document.getElementById('recoverPasswordForm').classList.add('hidden');
+  document.getElementById('clerk-login').classList.remove('hidden');
   document.getElementById('userSection').classList.add('hidden');
   document.getElementById('eventFormSection').classList.add('hidden');
   document.getElementById('eventListSection').classList.add('hidden');
-}
-
-// Manejar formulario de login
-document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  
-  try {
-    const response = await fetch(`${AUTH_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      showAuthenticatedUI(data.usuario);
-      cargarEventos();
-      document.getElementById('loginFormElement').reset();
-    } else {
-      alert(data.mensaje || 'Error en el login');
-    }
-  } catch (error) {
-    console.error('Error en el login:', error);
-    alert('Error al conectar con el servidor');
-  }
-});
-
-// Manejar formulario de registro
-document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const nombre = document.getElementById('registerNombre').value;
-  const email = document.getElementById('registerEmail').value;
-  const password = document.getElementById('registerPassword').value;
-  
-  try {
-    const response = await fetch(`${AUTH_URL}/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ nombre, email, password })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      alert('Usuario registrado exitosamente. Por favor inicia sesión.');
-      showLoginForm();
-      document.getElementById('registerFormElement').reset();
-    } else {
-      alert(data.mensaje || 'Error en el registro');
-    }
-  } catch (error) {
-    console.error('Error en el registro:', error);
-    alert('Error al conectar con el servidor');
-  }
-});
-
-// Cerrar sesión
-function logout() {
-  localStorage.removeItem('usuario');
-  showUnauthenticatedUI();
-  document.getElementById('eventosList').innerHTML = '<p class="text-gray-500 text-center py-4">No hay eventos aún</p>';
-}
-
-// Verificar sesión existente
-function checkSession() {
-  const usuario = localStorage.getItem('usuario');
-  if (usuario) {
-    showAuthenticatedUI(JSON.parse(usuario));
-    cargarEventos();
-  } else {
-    showUnauthenticatedUI();
-  }
 }
 
 // Manejar formulario
 document.getElementById('eventoForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const usuario = JSON.parse(localStorage.getItem('usuario'));
+  if (!window.Clerk || !window.Clerk.user) {
+    alert('Debes estar autenticado para crear eventos');
+    return;
+  }
+  
+  const usuario = {
+    id: window.Clerk.user.id,
+    email: window.Clerk.user.primaryEmailAddress?.emailAddress,
+    nombre: window.Clerk.user.firstName || window.Clerk.user.primaryEmailAddress?.emailAddress
+  };
   const titulo = document.getElementById('titulo').value;
   const fecha = document.getElementById('fecha').value;
   const descripcion = document.getElementById('descripcion').value;
@@ -192,22 +129,23 @@ document.getElementById('eventoForm').addEventListener('submit', async (e) => {
   
   try {
     let response;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${await window.Clerk.session.getToken()}`
+    };
+    
     if (editingId) {
       // Modo edición
       response = await fetch(`${API_URL}/${editingId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(eventData)
       });
     } else {
       // Modo creación
       response = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(eventData)
       });
     }
@@ -262,7 +200,11 @@ function getUserColor(email) {
 // Mostrar eventos en el DOM
 function mostrarEventos(eventos) {
   const lista = document.getElementById('eventosList');
-  const usuario = JSON.parse(localStorage.getItem('usuario'));
+  const usuario = window.Clerk && window.Clerk.user ? {
+    id: window.Clerk.user.id,
+    email: window.Clerk.user.primaryEmailAddress?.emailAddress,
+    nombre: window.Clerk.user.firstName || window.Clerk.user.primaryEmailAddress?.emailAddress
+  } : null;
   
   if (eventos.length === 0) {
     lista.innerHTML = '<p class="text-gray-500 text-center py-4">No hay eventos aún</p>';
@@ -270,7 +212,7 @@ function mostrarEventos(eventos) {
   }
   
   lista.innerHTML = eventos.map(evento => {
-    const esCreador = usuario && usuario.id === evento.usuario_id;
+    const esCreador = usuario && evento.usuarios && usuario.id === evento.usuarios.clerk_id;
     const nombreUsuario = evento.usuarios ? (evento.usuarios.nombre || evento.usuarios.email) : 'Usuario';
     const colorBadge = evento.usuarios ? getUserColor(evento.usuarios.email) : '#e5e7eb';
     
@@ -320,13 +262,23 @@ function mostrarEventos(eventos) {
 async function eliminarEvento(id) {
   if (!confirm('¿Estás seguro de eliminar este evento?')) return;
   
-  const usuario = JSON.parse(localStorage.getItem('usuario'));
+  if (!window.Clerk || !window.Clerk.user) {
+    alert('Debes estar autenticado para eliminar eventos');
+    return;
+  }
+  
+  const usuario = {
+    id: window.Clerk.user.id,
+    email: window.Clerk.user.primaryEmailAddress?.emailAddress,
+    nombre: window.Clerk.user.firstName || window.Clerk.user.primaryEmailAddress?.emailAddress
+  };
   
   try {
     const response = await fetch(`${API_URL}/${id}`, {
       method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${await window.Clerk.session.getToken()}`
       },
       body: JSON.stringify({ usuario_id: usuario.id })
     });
