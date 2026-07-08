@@ -32,7 +32,7 @@ En Render:
 Build Command:
 
 ```sh
-npm install && npx prisma generate && npx prisma migrate deploy && npm run build
+npm install && npx prisma generate && npm run build
 ```
 
 Start Command:
@@ -68,7 +68,9 @@ Importante:
 
 ## 5. Migraciones
 
-Render ejecutara:
+Las migraciones no se ejecutan dentro del build de Render. Esto evita que el deploy quede bloqueado si Supabase o el pooler tardan en responder.
+
+Ejecutalas aparte con:
 
 ```sh
 npx prisma migrate deploy
