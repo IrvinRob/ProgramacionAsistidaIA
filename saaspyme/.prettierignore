@@ -1,0 +1,16 @@
+# Package Managers
+node_modules
+.npm-cache
+.sveltekit-template
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Miscellaneous
+/static/
+/.svelte-kit
+/build
+/src/generated/prisma
+~$*.xlsx

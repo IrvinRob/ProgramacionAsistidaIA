@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Cliente {
+  id             String       @id @default(cuid())
+  nombre         String
+  empresa        String?
+  rfc            String?      @unique
+  correo         String
+  telefono       String?
+  direccion      String?
+  notas          String?
+  activo         Boolean      @default(true)
+  creadoEn       DateTime     @default(now())
+  actualizadoEn  DateTime     @updatedAt
+  cotizaciones   Cotizacion[]
+
+  @@index([activo, creadoEn])
+  @@index([nombre])
+  @@index([empresa])
+}
+
+model Cotizacion {
+  id             String             @id @default(cuid())
+  numero         String             @unique
+  clienteId      String
+  cliente        Cliente            @relation(fields: [clienteId], references: [id])
+  estado         EstadoCot          @default(BORRADOR)
+  fecha          DateTime           @default(now())
+  vencimiento    DateTime?
+  subtotal       Decimal            @db.Decimal(12, 2)
+  iva            Decimal            @db.Decimal(12, 2)
+  total          Decimal            @db.Decimal(12, 2)
+  notas          String?
+  conceptos      Concepto[]
+  pagos          Pago[]
+  historial      HistorialCot[]
+  recordatorios  RecordatorioPago[]
+  creadoEn       DateTime           @default(now())
+  actualizadoEn  DateTime           @updatedAt
+
+  @@index([clienteId])
+  @@index([estado])
+  @@index([fecha])
+}
+
+model Concepto {
+  id              String     @id @default(cuid())
+  cotizacionId    String
+  cotizacion      Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  descripcion     String
+  cantidad        Decimal    @db.Decimal(10, 2)
+  precioUnitario  Decimal    @db.Decimal(12, 2)
+  subtotal        Decimal    @db.Decimal(12, 2)
+
+  @@index([cotizacionId])
+}
+
+model Pago {
+  id            String     @id @default(cuid())
+  cotizacionId  String
+  cotizacion    Cotizacion @relation(fields: [cotizacionId], references: [id])
+  monto         Decimal    @db.Decimal(12, 2)
+  fecha         DateTime
+  metodo        MetodoPago
+  referencia    String?
+  creadoEn      DateTime   @default(now())
+
+  @@index([cotizacionId])
+  @@index([fecha])
+}
+
+model HistorialCot {
+  id              String     @id @default(cuid())
+  cotizacionId    String
+  cotizacion      Cotizacion @relation(fields: [cotizacionId], references: [id])
+  estadoAnterior  EstadoCot?
+  estadoNuevo     EstadoCot
+  nota            String?
+  clerkUserId     String?
+  creadoEn        DateTime   @default(now())
+
+  @@index([cotizacionId])
+  @@index([creadoEn])
+}
+
+model RecordatorioPago {
+  id            String     @id @default(cuid())
+  cotizacionId  String
+  cotizacion    Cotizacion @relation(fields: [cotizacionId], references: [id])
+  correo        String
+  clerkUserId   String?
+  enviadoEn     DateTime   @default(now())
+  resultado     String?
+
+  @@index([cotizacionId])
+  @@index([correo, enviadoEn])
+}
+
+enum EstadoCot {
+  BORRADOR
+  ENVIADA
+  APROBADA
+  RECHAZADA
+  FACTURADA
+  PAGADA
+}
+
+enum MetodoPago {
+  TRANSFERENCIA
+  EFECTIVO
+  CHEQUE
+  TARJETA
+}
