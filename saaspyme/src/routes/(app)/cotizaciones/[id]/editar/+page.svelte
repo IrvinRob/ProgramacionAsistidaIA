@@ -180,48 +180,60 @@
 							<option value="nuevo">Nuevo concepto</option>
 						</select>
 						{#if concepto.tipo === 'nuevo'}
-							<input
-								name="descripcion"
-								bind:value={concepto.descripcion}
-								placeholder="Descripcion del servicio"
-								class="rounded-md border border-slate-300 px-3 py-2 text-sm"
-								required
-							/>
+							<label class="space-y-1 text-sm">
+								<span class="font-medium text-slate-700">Descripcion</span>
+								<input
+									name="descripcion"
+									bind:value={concepto.descripcion}
+									placeholder="Descripcion del servicio"
+									class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+									required
+								/>
+							</label>
 						{:else if concepto.tipo === 'guardado'}
-							<input
-								name="descripcion"
-								value={concepto.descripcion}
-								readonly
-								class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
-							/>
+							<label class="space-y-1 text-sm">
+								<span class="font-medium text-slate-700">Descripcion</span>
+								<input
+									name="descripcion"
+									value={concepto.descripcion}
+									readonly
+									class="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
+								/>
+							</label>
 						{:else}
 							<input type="hidden" name="descripcion" value="" />
 							<div class="hidden md:block"></div>
 						{/if}
-						<input
-							name="cantidad"
-							type="number"
-							step="0.01"
-							min="0.01"
-							bind:value={concepto.cantidad}
-							class="rounded-md border border-slate-300 px-3 py-2 text-sm"
-							required
-						/>
-						<input
-							name="precioUnitario"
-							type="number"
-							step="0.01"
-							min="0"
-							bind:value={concepto.precioUnitario}
-							readonly={concepto.tipo !== 'nuevo'}
-							class={[
-								'rounded-md border px-3 py-2 text-sm',
-								concepto.tipo === 'nuevo'
-									? 'border-slate-300'
-									: 'border-slate-200 bg-slate-50 text-slate-600'
-							]}
-							required
-						/>
+						<label class="space-y-1 text-sm">
+							<span class="font-medium text-slate-700">Cantidad</span>
+							<input
+								name="cantidad"
+								type="number"
+								step="0.01"
+								min="0.01"
+								bind:value={concepto.cantidad}
+								class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+								required
+							/>
+						</label>
+						<label class="space-y-1 text-sm">
+							<span class="font-medium text-slate-700">Precio</span>
+							<input
+								name="precioUnitario"
+								type="number"
+								step="0.01"
+								min="0"
+								bind:value={concepto.precioUnitario}
+								readonly={concepto.tipo !== 'nuevo'}
+								class={[
+									'w-full rounded-md border px-3 py-2 text-sm',
+									concepto.tipo === 'nuevo'
+										? 'border-slate-300'
+										: 'border-slate-200 bg-slate-50 text-slate-600'
+								]}
+								required
+							/>
+						</label>
 						<button
 							type="button"
 							onclick={() => quitarConcepto(index)}
