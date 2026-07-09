@@ -5,13 +5,13 @@
 	import { loadClerk } from '$lib/client/clerk.js';
 
 	let { data } = $props();
-	let authTarget = $state();
 	let error = $state('');
+	let clerk = $state();
+	let loading = $state(true);
+	let redirecting = $state(false);
 
 	$effect(() => {
-		if (!browser || !authTarget || !data.publishableKey) return;
-
-		let clerk;
+		if (!browser || !data.publishableKey) return;
 
 		loadClerk(data.publishableKey)
 			.then((loadedClerk) => {
@@ -21,24 +21,33 @@
 			.then(() => {
 				if (clerk.user) {
 					goto(resolve('/dashboard'));
-					return;
 				}
-
-				clerk.mountSignIn(authTarget, {
-					afterSignInUrl: resolve('/dashboard'),
-					afterSignUpUrl: resolve('/dashboard'),
-					signUpUrl: resolve('/login')
-				});
 			})
 			.catch((cause) => {
 				console.error('No se pudo cargar Clerk', cause);
 				error = 'No se pudo cargar Clerk. Revisa la llave publica.';
+			})
+			.finally(() => {
+				loading = false;
 			});
-
-		return () => {
-			clerk?.unmountSignIn(authTarget);
-		};
 	});
+
+	async function signInWithClerk() {
+		if (!clerk) return;
+
+		redirecting = true;
+		error = '';
+
+		try {
+			await clerk.redirectToSignIn({
+				redirectUrl: `${window.location.origin}${resolve('/dashboard')}`
+			});
+		} catch (cause) {
+			console.error('No se pudo iniciar sesion con Clerk', cause);
+			error = 'No se pudo iniciar sesion. Intenta de nuevo.';
+			redirecting = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -65,7 +74,20 @@
 	<section class="flex items-center justify-center bg-white px-6 py-10 text-slate-950">
 		<div class="w-full max-w-md">
 			{#if data.publishableKey}
-				<div bind:this={authTarget}></div>
+				<div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+					<h2 class="text-xl font-semibold">Iniciar sesion</h2>
+					<p class="mt-2 text-sm leading-6 text-slate-600">
+						Continua con Clerk para acceder al panel de GestorPyme.
+					</p>
+					<button
+						type="button"
+						class="mt-6 w-full rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+						disabled={loading || redirecting || !clerk}
+						onclick={signInWithClerk}
+					>
+						{redirecting ? 'Abriendo Clerk...' : loading ? 'Cargando...' : 'Continuar'}
+					</button>
+				</div>
 				{#if error}
 					<p class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
 				{/if}
