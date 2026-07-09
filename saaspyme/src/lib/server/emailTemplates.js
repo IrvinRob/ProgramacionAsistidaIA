@@ -9,6 +9,35 @@ function escapeHtml(value) {
 		.replaceAll("'", '&#039;');
 }
 
+function renderConceptos(conceptos) {
+	return conceptos
+		.map(
+			(concepto) => `
+				<div style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 12px;overflow:hidden;">
+					<div style="padding:12px;background:#f9fafb;">
+						<p style="margin:0;color:#111827;font-size:14px;font-weight:bold;line-height:1.4;word-break:break-word;">${escapeHtml(concepto.descripcion)}</p>
+					</div>
+					<div style="padding:10px 12px;border-top:1px solid #e5e7eb;">
+						<table role="presentation" style="width:100%;border-collapse:collapse;font-size:13px;">
+							<tr>
+								<td style="padding:4px 0;color:#6b7280;">Cantidad</td>
+								<td style="padding:4px 0;text-align:right;color:#111827;font-weight:bold;">${escapeHtml(concepto.cantidad)}</td>
+							</tr>
+							<tr>
+								<td style="padding:4px 0;color:#6b7280;">Precio unitario</td>
+								<td style="padding:4px 0;text-align:right;color:#111827;font-weight:bold;">${formatMXN(concepto.precioUnitario)}</td>
+							</tr>
+							<tr>
+								<td style="padding:4px 0;color:#6b7280;">Subtotal</td>
+								<td style="padding:4px 0;text-align:right;color:#111827;font-weight:bold;">${formatMXN(concepto.subtotal)}</td>
+							</tr>
+						</table>
+					</div>
+				</div>`
+		)
+		.join('');
+}
+
 export function templateCotizacionEnviada({
 	cliente,
 	cotizacion,
@@ -16,47 +45,27 @@ export function templateCotizacionEnviada({
 	aprobarUrl,
 	rechazarUrl
 }) {
-	const filasConceptos = conceptos
-		.map(
-			(concepto) => `
-				<tr>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${escapeHtml(concepto.descripcion)}</td>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${escapeHtml(concepto.cantidad)}</td>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatMXN(concepto.precioUnitario)}</td>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatMXN(concepto.subtotal)}</td>
-				</tr>`
-		)
-		.join('');
+	const conceptosHtml = renderConceptos(conceptos);
 
 	return `<!doctype html>
 <html lang="es">
-	<body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
-		<div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
-			<div style="background:#1f2937;padding:24px 32px;">
-				<h1 style="color:#ffffff;margin:0;font-size:22px;">Cotizacion ${escapeHtml(cotizacion.numero)}</h1>
+	<body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:12px;width:100%;">
+		<div style="width:100%;max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;box-sizing:border-box;">
+			<div style="background:#1f2937;padding:22px 20px;">
+				<h1 style="color:#ffffff;margin:0;font-size:22px;line-height:1.25;word-break:break-word;">Cotizacion ${escapeHtml(cotizacion.numero)}</h1>
 			</div>
-			<div style="padding:32px;">
-				<p style="color:#374151;font-size:15px;">Estimado/a <strong>${escapeHtml(cliente.nombre)}</strong>,</p>
-				<p style="color:#374151;font-size:15px;">Le enviamos la cotizacion <strong>${escapeHtml(cotizacion.numero)}</strong> con el siguiente desglose:</p>
-				<table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
-					<thead>
-						<tr style="background:#f3f4f6;">
-							<th style="padding:10px 12px;text-align:left;color:#6b7280;">Descripcion</th>
-							<th style="padding:10px 12px;text-align:center;color:#6b7280;">Cant.</th>
-							<th style="padding:10px 12px;text-align:right;color:#6b7280;">Precio Unit.</th>
-							<th style="padding:10px 12px;text-align:right;color:#6b7280;">Subtotal</th>
-						</tr>
-					</thead>
-					<tbody>${filasConceptos}</tbody>
-				</table>
-				<div style="text-align:right;margin-top:16px;padding:16px;background:#eef2ff;border-radius:6px;">
+			<div style="padding:24px 20px;">
+				<p style="color:#374151;font-size:15px;line-height:1.5;">Estimado/a <strong>${escapeHtml(cliente.nombre)}</strong>,</p>
+				<p style="color:#374151;font-size:15px;line-height:1.5;">Le enviamos la cotizacion <strong>${escapeHtml(cotizacion.numero)}</strong> con el siguiente desglose:</p>
+				<div style="margin:20px 0;">${conceptosHtml}</div>
+				<div style="text-align:right;margin-top:16px;padding:16px;background:#eef2ff;border-radius:6px;box-sizing:border-box;">
 					<p style="margin:4px 0;color:#6b7280;font-size:13px;">Subtotal: ${formatMXN(cotizacion.subtotal)}</p>
 					<p style="margin:4px 0;color:#6b7280;font-size:13px;">IVA (16%): ${formatMXN(cotizacion.iva)}</p>
-					<p style="margin:0;color:#1f2937;font-size:20px;font-weight:bold;">Total: ${formatMXN(cotizacion.total)}</p>
+					<p style="margin:0;color:#1f2937;font-size:20px;font-weight:bold;line-height:1.3;">Total: ${formatMXN(cotizacion.total)}</p>
 				</div>
 				<p style="margin-top:24px;">
-					<a href="${escapeHtml(aprobarUrl)}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;margin-right:8px;">Aprobar cotizacion</a>
-					<a href="${escapeHtml(rechazarUrl)}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;">Rechazar cotizacion</a>
+					<a href="${escapeHtml(aprobarUrl)}" style="display:block;background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;margin:0 0 10px;text-align:center;font-weight:bold;">Aprobar cotizacion</a>
+					<a href="${escapeHtml(rechazarUrl)}" style="display:block;background:#dc2626;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;text-align:center;font-weight:bold;">Rechazar cotizacion</a>
 				</p>
 			</div>
 		</div>
@@ -65,46 +74,26 @@ export function templateCotizacionEnviada({
 }
 
 export function templateFacturaEnviada({ cliente, cotizacion, conceptos, pagarUrl }) {
-	const filasConceptos = conceptos
-		.map(
-			(concepto) => `
-				<tr>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${escapeHtml(concepto.descripcion)}</td>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${escapeHtml(concepto.cantidad)}</td>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatMXN(concepto.precioUnitario)}</td>
-					<td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatMXN(concepto.subtotal)}</td>
-				</tr>`
-		)
-		.join('');
+	const conceptosHtml = renderConceptos(conceptos);
 
 	return `<!doctype html>
 <html lang="es">
-	<body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
-		<div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
-			<div style="background:#1f2937;padding:24px 32px;">
-				<h1 style="color:#ffffff;margin:0;font-size:22px;">Factura ${escapeHtml(cotizacion.numero)}</h1>
+	<body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:12px;width:100%;">
+		<div style="width:100%;max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;box-sizing:border-box;">
+			<div style="background:#1f2937;padding:22px 20px;">
+				<h1 style="color:#ffffff;margin:0;font-size:22px;line-height:1.25;word-break:break-word;">Factura ${escapeHtml(cotizacion.numero)}</h1>
 			</div>
-			<div style="padding:32px;">
-				<p style="color:#374151;font-size:15px;">Estimado/a <strong>${escapeHtml(cliente.nombre)}</strong>,</p>
-				<p style="color:#374151;font-size:15px;">Su cotizacion fue aprobada y se adjunta la factura con el siguiente desglose:</p>
-				<table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
-					<thead>
-						<tr style="background:#f3f4f6;">
-							<th style="padding:10px 12px;text-align:left;color:#6b7280;">Descripcion</th>
-							<th style="padding:10px 12px;text-align:center;color:#6b7280;">Cant.</th>
-							<th style="padding:10px 12px;text-align:right;color:#6b7280;">Precio Unit.</th>
-							<th style="padding:10px 12px;text-align:right;color:#6b7280;">Subtotal</th>
-						</tr>
-					</thead>
-					<tbody>${filasConceptos}</tbody>
-				</table>
-				<div style="text-align:right;margin-top:16px;padding:16px;background:#f8fafc;border-radius:6px;">
+			<div style="padding:24px 20px;">
+				<p style="color:#374151;font-size:15px;line-height:1.5;">Estimado/a <strong>${escapeHtml(cliente.nombre)}</strong>,</p>
+				<p style="color:#374151;font-size:15px;line-height:1.5;">Su cotizacion fue aprobada y se adjunta la factura con el siguiente desglose:</p>
+				<div style="margin:20px 0;">${conceptosHtml}</div>
+				<div style="text-align:right;margin-top:16px;padding:16px;background:#f8fafc;border-radius:6px;box-sizing:border-box;">
 					<p style="margin:4px 0;color:#6b7280;font-size:13px;">Subtotal: ${formatMXN(cotizacion.subtotal)}</p>
 					<p style="margin:4px 0;color:#6b7280;font-size:13px;">IVA (16%): ${formatMXN(cotizacion.iva)}</p>
-					<p style="margin:0;color:#1f2937;font-size:20px;font-weight:bold;">Total: ${formatMXN(cotizacion.total)}</p>
+					<p style="margin:0;color:#1f2937;font-size:20px;font-weight:bold;line-height:1.3;">Total: ${formatMXN(cotizacion.total)}</p>
 				</div>
 				<p style="margin-top:24px;">
-					<a href="${escapeHtml(pagarUrl)}" style="display:inline-block;background:#1f2937;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;">Liquidar factura</a>
+					<a href="${escapeHtml(pagarUrl)}" style="display:block;background:#1f2937;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;text-align:center;font-weight:bold;">Liquidar factura</a>
 				</p>
 				<p style="color:#64748b;font-size:13px;margin-top:12px;">Si desea abonar una parte a su cuenta, contáctenos por teléfono o whatsapp.</p>
 			</div>
