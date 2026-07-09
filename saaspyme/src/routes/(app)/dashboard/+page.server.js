@@ -48,6 +48,7 @@ export async function load() {
 	try {
 		const [
 			cotizacionesMes,
+			cotizacionesGrafica,
 			pagosMes,
 			pagosGrafica,
 			cotsPendientes,
@@ -57,6 +58,10 @@ export async function load() {
 		] = await Promise.all([
 			prisma.cotizacion.findMany({
 				where: { estado: { in: ESTADOS_VENTA }, creadoEn: { gte: inicioMes } }
+			}),
+			prisma.cotizacion.findMany({
+				where: { estado: { in: ESTADOS_VENTA }, fecha: { gte: inicioGrafica } },
+				select: { total: true, fecha: true }
 			}),
 			prisma.pago.findMany({ where: { fecha: { gte: inicioMes } } }),
 			prisma.pago.findMany({
@@ -107,9 +112,17 @@ export async function load() {
 			return {
 				key: `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`,
 				label: new Intl.DateTimeFormat('es-MX', { month: 'short' }).format(fecha),
+				ventas: 0,
 				total: 0
 			};
 		});
+		cotizacionesGrafica.reduce((items, cotizacion) => {
+			const fecha = new Date(cotizacion.fecha);
+			const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+			const item = items.find((mes) => mes.key === key);
+			if (item) item.ventas += Number(cotizacion.total);
+			return items;
+		}, meses);
 		const ingresosPorMes = pagosGrafica.reduce((items, pago) => {
 			const fecha = new Date(pago.fecha);
 			const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;

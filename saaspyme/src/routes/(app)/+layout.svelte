@@ -5,6 +5,8 @@
 
 	let { data, children } = $props();
 	let items = $derived(visibleNavItems(data.usuario));
+	let primaryItems = $derived(items.filter((item) => item.href !== '/usuarios'));
+	let secondaryItems = $derived(items.filter((item) => item.href === '/usuarios'));
 </script>
 
 <div class="min-h-screen bg-slate-50 text-slate-950">
@@ -47,20 +49,39 @@
 				</a>
 			</header>
 
-			<nav class="flex max-w-full flex-wrap gap-2 px-4 py-3 lg:hidden">
-				{#each items as item (item.href)}
-					<a
-						href={resolve(item.href)}
-						class={[
-							'rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap',
-							page.url.pathname.startsWith(item.href)
-								? 'bg-slate-900 text-white'
-								: 'text-slate-600 hover:bg-slate-100'
-						]}
-					>
-						{item.label}
-					</a>
-				{/each}
+			<nav class="space-y-2 px-4 py-3 lg:hidden">
+				<div class="grid grid-cols-4 gap-1">
+					{#each primaryItems as item (item.href)}
+						<a
+							href={resolve(item.href)}
+							class={[
+								'rounded-md px-1.5 py-2 text-center text-xs font-medium whitespace-nowrap sm:text-sm',
+								page.url.pathname.startsWith(item.href)
+									? 'bg-slate-900 text-white'
+									: 'text-slate-600 hover:bg-slate-100'
+							]}
+						>
+							{item.label}
+						</a>
+					{/each}
+				</div>
+				{#if secondaryItems.length}
+					<div class="flex flex-wrap gap-1">
+						{#each secondaryItems as item (item.href)}
+							<a
+								href={resolve(item.href)}
+								class={[
+									'rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap sm:text-sm',
+									page.url.pathname.startsWith(item.href)
+										? 'bg-slate-900 text-white'
+										: 'text-slate-600 hover:bg-slate-100'
+								]}
+							>
+								{item.label}
+							</a>
+						{/each}
+					</div>
+				{/if}
 			</nav>
 		</div>
 

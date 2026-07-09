@@ -1,4 +1,5 @@
 <script>
+	import { resolve } from '$app/paths';
 	import { Bar, Doughnut } from 'svelte-chartjs';
 	import {
 		BarElement,
@@ -26,6 +27,7 @@
 	const estadoLabels = $derived(estadosOrdenados.map((item) => item.estado));
 	const estadoValues = $derived(estadosOrdenados.map((item) => item._count.estado));
 	const ingresosLabels = $derived(data.ingresosPorMes.map((item) => item.label));
+	const ventasValues = $derived(data.ingresosPorMes.map((item) => item.ventas));
 	const ingresosValues = $derived(data.ingresosPorMes.map((item) => item.total));
 	const estadoColors = {
 		RECHAZADA: '#dc2626',
@@ -40,9 +42,15 @@
 		labels: ingresosLabels,
 		datasets: [
 			{
-				label: 'Cobrado',
+				label: 'Ventas del mes',
+				data: ventasValues,
+				backgroundColor: '#16a34a',
+				borderRadius: 6
+			},
+			{
+				label: 'Cobrado por mes',
 				data: ingresosValues,
-				backgroundColor: '#0f172a',
+				backgroundColor: '#9333ea',
 				borderRadius: 6
 			}
 		]
@@ -61,12 +69,16 @@
 		responsive: true,
 		maintainAspectRatio: false,
 		plugins: {
-			legend: { display: false },
+			legend: { display: true, position: 'top' },
 			tooltip: {
 				callbacks: {
 					label: (context) => formatMXN(context.parsed.y ?? context.parsed)
 				}
 			}
+		},
+		scales: {
+			x: { stacked: true },
+			y: { stacked: true }
 		}
 	};
 	const doughnutOptions = {
@@ -115,9 +127,9 @@
 
 	<div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
-			<h2 class="text-base font-semibold">Cobrado por mes</h2>
+			<h2 class="text-base font-semibold">Ventas del mes / Cobrado por mes</h2>
 			<div class="mt-4 h-72">
-				{#if data.ingresosPorMes.some((item) => item.total > 0)}
+				{#if data.ingresosPorMes.some((item) => item.total > 0 || item.ventas > 0)}
 					<Bar data={ingresosChart} options={chartOptions} />
 				{:else}
 					<p
@@ -160,11 +172,20 @@
 								{formatMXN(Number(cotizacion.total))}
 							</p>
 						</div>
-						<p
-							class="mt-3 inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
-						>
-							{cotizacion.estado}
-						</p>
+						<div class="mt-3 flex items-center justify-between gap-3">
+							<p
+								class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+							>
+								{cotizacion.estado}
+							</p>
+							<a
+								href={resolve(`/cotizaciones/${cotizacion.id}/pdf`)}
+								class="inline-flex rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+								aria-label={`Descargar PDF de ${cotizacion.numero}`}
+							>
+								PDF
+							</a>
+						</div>
 					</div>
 				{:else}
 					<p
@@ -182,6 +203,7 @@
 							<th class="px-4 py-3 font-medium">Cliente</th>
 							<th class="px-4 py-3 font-medium">Estado</th>
 							<th class="px-4 py-3 text-right font-medium">Total</th>
+							<th class="px-4 py-3 text-right font-medium">PDF</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-200">
@@ -191,10 +213,19 @@
 								<td class="px-4 py-3">{cotizacion.cliente.nombre}</td>
 								<td class="px-4 py-3">{cotizacion.estado}</td>
 								<td class="px-4 py-3 text-right">{formatMXN(Number(cotizacion.total))}</td>
+								<td class="px-4 py-3 text-right">
+									<a
+										href={resolve(`/cotizaciones/${cotizacion.id}/pdf`)}
+										class="inline-flex rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+										aria-label={`Descargar PDF de ${cotizacion.numero}`}
+									>
+										PDF
+									</a>
+								</td>
 							</tr>
 						{:else}
 							<tr>
-								<td colspan="4" class="px-4 py-8 text-center text-slate-500">
+								<td colspan="5" class="px-4 py-8 text-center text-slate-500">
 									Aun no hay cotizaciones.
 								</td>
 							</tr>

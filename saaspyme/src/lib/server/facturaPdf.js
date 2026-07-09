@@ -1,13 +1,13 @@
 import PDFDocument from 'pdfkit';
 import { formatMXN } from './format.js';
 
-export async function generarFacturaPdf({ cotizacion, cliente, conceptos }) {
+export async function generarFacturaPdf({ cotizacion, cliente, conceptos, titulo = 'Factura' }) {
 	const doc = new PDFDocument({ margin: 48, size: 'LETTER' });
 	const chunks = [];
 
 	doc.on('data', (chunk) => chunks.push(chunk));
 
-	doc.fontSize(20).text(`Factura ${cotizacion.numero}`, { align: 'left' });
+	doc.fontSize(20).text(`${titulo} ${cotizacion.numero}`, { align: 'left' });
 	doc.moveDown(0.5);
 	doc.fontSize(10).fillColor('#475569').text(`Cliente: ${cliente.nombre}`);
 	if (cliente.empresa) doc.text(`Empresa: ${cliente.empresa}`);
