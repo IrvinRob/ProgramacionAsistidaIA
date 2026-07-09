@@ -2,6 +2,7 @@ import { prisma } from '$lib/server/prisma.js';
 import { verifyCotizacionToken } from '$lib/server/cotizacionTokens.js';
 import { enviarFacturaCliente } from '$lib/server/cotizacionWorkflow.js';
 import { calcularSaldo } from '$lib/server/cotizaciones.js';
+import { nextHistorialId, nextPagoId } from '$lib/server/secuencias.js';
 
 function htmlResponse(title, message) {
 	return new Response(
@@ -63,6 +64,7 @@ export async function GET({ url }) {
 				estado: 'RECHAZADA',
 				historial: {
 					create: {
+						id: await nextHistorialId(prisma),
 						estadoAnterior: cotizacion.estado,
 						estadoNuevo: 'RECHAZADA',
 						nota: 'Cliente rechazo desde correo.'
@@ -86,6 +88,7 @@ export async function GET({ url }) {
 		const actualizada = await prisma.$transaction(async (tx) => {
 			await tx.historialCot.create({
 				data: {
+					id: await nextHistorialId(tx),
 					cotizacionId: cotizacion.id,
 					estadoAnterior: cotizacion.estado,
 					estadoNuevo: 'APROBADA',
@@ -94,6 +97,7 @@ export async function GET({ url }) {
 			});
 			await tx.historialCot.create({
 				data: {
+					id: await nextHistorialId(tx),
 					cotizacionId: cotizacion.id,
 					estadoAnterior: 'APROBADA',
 					estadoNuevo: 'FACTURADA',
@@ -145,6 +149,7 @@ export async function GET({ url }) {
 					estado: 'PAGADA',
 					historial: {
 						create: {
+							id: await nextHistorialId(prisma),
 							estadoAnterior: 'FACTURADA',
 							estadoNuevo: 'PAGADA',
 							nota: 'Factura sin saldo pendiente.'
@@ -159,6 +164,7 @@ export async function GET({ url }) {
 		await prisma.$transaction(async (tx) => {
 			await tx.pago.create({
 				data: {
+					id: await nextPagoId(tx),
 					cotizacionId: cotizacion.id,
 					monto: saldoPendiente,
 					fecha: new Date(),
@@ -173,6 +179,7 @@ export async function GET({ url }) {
 					estado: 'PAGADA',
 					historial: {
 						create: {
+							id: await nextHistorialId(tx),
 							estadoAnterior: 'FACTURADA',
 							estadoNuevo: 'PAGADA',
 							nota: `Cliente liquido factura desde correo por ${saldoPendiente}.`

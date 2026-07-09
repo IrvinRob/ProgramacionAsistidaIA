@@ -5,6 +5,11 @@ import { requireUsuario } from '$lib/server/auth.js';
 import { calcularTotales } from '$lib/server/cotizaciones.js';
 import { conceptoSchema } from '$lib/server/validation.js';
 import { enviarCotizacionCliente } from '$lib/server/cotizacionWorkflow.js';
+import {
+	nextConceptoIds,
+	nextCotizacionIdentity,
+	nextHistorialId
+} from '$lib/server/secuencias.js';
 
 const cotizacionSchema = z.object({
 	clienteId: z.string().min(1, 'Selecciona un cliente'),
@@ -16,18 +21,6 @@ const cotizacionSchema = z.object({
 
 function cleanOptional(value) {
 	return value === '' ? null : value;
-}
-
-async function generarNumeroCotizacion(tx, fecha = new Date()) {
-	const year = fecha.getFullYear();
-	const prefix = `COT-${year}-`;
-	const ultima = await tx.cotizacion.findFirst({
-		where: { numero: { startsWith: prefix } },
-		orderBy: { numero: 'desc' },
-		select: { numero: true }
-	});
-	const lastNumber = Number(ultima?.numero?.slice(prefix.length) ?? 0);
-	return `${prefix}${String(lastNumber + 1).padStart(4, '0')}`;
 }
 
 function parseConceptos(formData) {
@@ -127,10 +120,12 @@ export const actions = {
 
 		try {
 			const cotizacion = await prisma.$transaction(async (tx) => {
-				const numero = await generarNumeroCotizacion(tx, fecha);
+				const identity = await nextCotizacionIdentity(tx, fecha);
+				const conceptoIds = await nextConceptoIds(tx, conceptos.length);
 				const creada = await tx.cotizacion.create({
 					data: {
-						numero,
+						id: identity.id,
+						numero: identity.numero,
 						clienteId: parsed.data.clienteId,
 						estado: estadoInicial,
 						fecha,
@@ -139,9 +134,15 @@ export const actions = {
 						iva: totales.iva,
 						total: totales.total,
 						notas: cleanOptional(parsed.data.notas),
-						conceptos: { create: conceptos },
+						conceptos: {
+							create: conceptos.map((concepto, index) => ({
+								id: conceptoIds[index],
+								...concepto
+							}))
+						},
 						historial: {
 							create: {
+								id: await nextHistorialId(tx),
 								estadoAnterior: null,
 								estadoNuevo: 'BORRADOR',
 								nota: 'Cotizacion creada',
@@ -155,6 +156,7 @@ export const actions = {
 				if (estadoInicial === 'ENVIADA') {
 					await tx.historialCot.create({
 						data: {
+							id: await nextHistorialId(tx),
 							cotizacionId: creada.id,
 							estadoAnterior: 'BORRADOR',
 							estadoNuevo: 'ENVIADA',

@@ -5,6 +5,7 @@ import { calcularSaldo, redondearMoneda } from '$lib/server/cotizaciones.js';
 import { pagoSchema } from '$lib/server/validation.js';
 import { sendEmail } from '$lib/server/email.js';
 import { templateRecordatorioPago } from '$lib/server/emailTemplates.js';
+import { nextHistorialId, nextPagoId } from '$lib/server/secuencias.js';
 
 function daysSince(date) {
 	const ms = Date.now() - date.getTime();
@@ -86,6 +87,7 @@ export const actions = {
 		await prisma.$transaction(async (tx) => {
 			await tx.pago.create({
 				data: {
+					id: await nextPagoId(tx),
 					cotizacionId: cotizacion.id,
 					monto: parsed.data.monto,
 					fecha: parsed.data.fecha,
@@ -101,6 +103,7 @@ export const actions = {
 						estado: 'PAGADA',
 						historial: {
 							create: {
+								id: await nextHistorialId(tx),
 								estadoAnterior: cotizacion.estado,
 								estadoNuevo: 'PAGADA',
 								nota: 'Saldo liquidado por registro de pago',
