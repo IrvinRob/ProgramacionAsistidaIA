@@ -75,10 +75,6 @@
 					label: (context) => formatMXN(context.parsed.y ?? context.parsed)
 				}
 			}
-		},
-		scales: {
-			x: { stacked: true },
-			y: { stacked: true }
 		}
 	};
 	const doughnutOptions = {

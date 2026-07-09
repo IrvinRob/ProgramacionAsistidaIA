@@ -169,6 +169,19 @@
 							>
 								Enviar recordatorio
 							</button>
+							{#if form?.recordatorio?.cotizacionId === cotizacion.id && form.recordatorio.status === 'sent'}
+								<p
+									class="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+								>
+									Recordatorio enviado
+								</p>
+							{:else if form?.recordatorio?.cotizacionId === cotizacion.id && form.recordatorio.status === 'duplicate'}
+								<p
+									class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700"
+								>
+									Ya se envió recordatorio hoy
+								</p>
+							{/if}
 						</form>
 					</div>
 				</div>

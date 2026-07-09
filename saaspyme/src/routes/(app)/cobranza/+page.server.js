@@ -12,6 +12,16 @@ function daysSince(date) {
 	return Math.max(Math.floor(ms / 86_400_000), 0);
 }
 
+function todayRange() {
+	const start = new Date();
+	start.setHours(0, 0, 0, 0);
+
+	const end = new Date(start);
+	end.setDate(end.getDate() + 1);
+
+	return { start, end };
+}
+
 function serializePendiente(cotizacion) {
 	const pagado = cotizacion.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
 	const pendiente = redondearMoneda(Number(cotizacion.total) - pagado);
@@ -145,6 +155,23 @@ export const actions = {
 			return fail(400, { errors: { general: 'La cotizacion no tiene saldo pendiente.' } });
 		}
 
+		const { start, end } = todayRange();
+		const recordatorioHoy = await prisma.recordatorioPago.findFirst({
+			where: {
+				cotizacionId: cotizacion.id,
+				enviadoEn: { gte: start, lt: end },
+				resultado: { startsWith: 'ENVIADO:' }
+			},
+			select: { id: true }
+		});
+
+		if (recordatorioHoy) {
+			return fail(400, {
+				errors: { general: 'Ya se envió recordatorio hoy' },
+				recordatorio: { cotizacionId: cotizacion.id, status: 'duplicate' }
+			});
+		}
+
 		const result = await sendEmail({
 			to: cotizacion.cliente.correo,
 			subject: `Recordatorio de pago ${cotizacion.numero}`,
@@ -168,6 +195,6 @@ export const actions = {
 			return fail(500, { errors: { general: `No se pudo enviar el correo: ${result.error}` } });
 		}
 
-		return { ok: true };
+		return { ok: true, recordatorio: { cotizacionId: cotizacion.id, status: 'sent' } };
 	}
 };
