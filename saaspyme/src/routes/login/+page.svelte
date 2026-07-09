@@ -12,14 +12,53 @@
 		if (!browser || !authTarget || !data.publishableKey) return;
 
 		let clerk;
+		let unsubscribe;
+		let syncing = false;
+
+		async function syncSession(loadedClerk) {
+			if (syncing || !loadedClerk.session) return;
+
+			syncing = true;
+
+			try {
+				const token = await loadedClerk.session.getToken();
+
+				if (!token) return;
+
+				const response = await fetch(resolve('/api/auth/session'), {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ token })
+				});
+
+				if (!response.ok) {
+					throw new Error('No se pudo sincronizar la sesion');
+				}
+
+				const result = await response.json();
+				await goto(resolve(result.redirectTo ?? '/dashboard'), { invalidateAll: true });
+			} catch (cause) {
+				console.error('No se pudo sincronizar Clerk', cause);
+				error = 'No se pudo completar el acceso. Intenta de nuevo.';
+			} finally {
+				syncing = false;
+			}
+		}
+
 		loadClerk(data.publishableKey)
 			.then((loadedClerk) => {
 				clerk = loadedClerk;
 
-				if (clerk.user) {
-					goto(resolve('/dashboard'));
+				if (clerk.user || clerk.session) {
+					syncSession(clerk);
 					return;
 				}
+
+				unsubscribe = clerk.addListener(({ user, session }) => {
+					if (user || session) {
+						syncSession(clerk);
+					}
+				});
 
 				const dashboardUrl = `${window.location.origin}${resolve('/dashboard')}`;
 
@@ -37,6 +76,7 @@
 			});
 
 		return () => {
+			unsubscribe?.();
 			clerk?.unmountSignIn(authTarget);
 		};
 	});

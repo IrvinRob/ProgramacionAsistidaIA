@@ -5,14 +5,35 @@ import { prisma } from '$lib/server/prisma.js';
 
 const PUBLIC_PATHS = new Set(['/login', '/logout', '/pendiente']);
 const ADMIN_ROLES = new Set(['ADMIN']);
+export const SESSION_COOKIE = 'gestorpyme_session';
 
 export function isPublicPath(pathname) {
-	return PUBLIC_PATHS.has(pathname) || pathname.startsWith('/api/public');
+	return (
+		PUBLIC_PATHS.has(pathname) ||
+		pathname.startsWith('/api/public') ||
+		pathname.startsWith('/api/auth')
+	);
 }
 
 export async function readSession(event) {
-	const token = event.cookies.get('__session');
+	const token = event.cookies.get(SESSION_COOKIE) ?? event.cookies.get('__session');
 
+	if (!token || !CLERK_SECRET_KEY) {
+		return null;
+	}
+
+	try {
+		const payload = await verifyToken(token, { secretKey: CLERK_SECRET_KEY });
+		return {
+			userId: payload.sub,
+			sessionId: payload.sid
+		};
+	} catch {
+		return null;
+	}
+}
+
+export async function verifySessionToken(token) {
 	if (!token || !CLERK_SECRET_KEY) {
 		return null;
 	}
