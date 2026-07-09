@@ -85,6 +85,39 @@
 								<p class="font-semibold">{formatMXN(cotizacion.pendiente)}</p>
 							</div>
 						</div>
+
+						<div class="mt-5">
+							<p class="text-sm font-semibold text-slate-950">Historial de pagos</p>
+							{#if cotizacion.pagos.length}
+								<div class="mt-2 overflow-hidden rounded-md border border-slate-200">
+									<table class="min-w-full divide-y divide-slate-200 text-sm">
+										<thead class="bg-slate-50 text-left text-xs font-medium text-slate-500">
+											<tr>
+												<th class="px-3 py-2">Fecha</th>
+												<th class="px-3 py-2 text-right">Cantidad</th>
+												<th class="px-3 py-2">Modo de pago</th>
+											</tr>
+										</thead>
+										<tbody class="divide-y divide-slate-200">
+											{#each cotizacion.pagos as pago (pago.id)}
+												<tr>
+													<td class="px-3 py-2">{formatDate(pago.fecha)}</td>
+													<td class="px-3 py-2 text-right font-medium">{formatMXN(pago.monto)}</td>
+													<td class="px-3 py-2">
+														{pago.metodo}
+														{#if pago.referencia}
+															<span class="text-slate-500"> · {pago.referencia}</span>
+														{/if}
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{:else}
+								<p class="mt-2 text-sm text-slate-500">Sin pagos registrados.</p>
+							{/if}
+						</div>
 					</div>
 
 					<div class="space-y-3">

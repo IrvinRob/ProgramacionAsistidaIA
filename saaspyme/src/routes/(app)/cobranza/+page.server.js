@@ -25,6 +25,13 @@ function serializePendiente(cotizacion) {
 		pagado,
 		pendiente,
 		dias: daysSince(cotizacion.fecha),
+		pagos: cotizacion.pagos.map((pago) => ({
+			id: pago.id,
+			fecha: pago.fecha.toISOString(),
+			monto: Number(pago.monto),
+			metodo: pago.metodo,
+			referencia: pago.referencia
+		})),
 		cliente: {
 			nombre: cotizacion.cliente.nombre,
 			empresa: cotizacion.cliente.empresa,
@@ -37,7 +44,7 @@ async function getPendientes() {
 	const cotizaciones = await prisma.cotizacion.findMany({
 		where: { estado: { in: ['APROBADA', 'FACTURADA'] } },
 		orderBy: { fecha: 'asc' },
-		include: { cliente: true, pagos: true }
+		include: { cliente: true, pagos: { orderBy: [{ fecha: 'desc' }, { creadoEn: 'desc' }] } }
 	});
 
 	return cotizaciones.map(serializePendiente).filter((cotizacion) => cotizacion.pendiente > 0);

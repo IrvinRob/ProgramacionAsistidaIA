@@ -39,7 +39,12 @@ export async function GET({ url }) {
 
 	const cotizacion = await prisma.cotizacion.findUnique({
 		where: { id: verified.cotizacionId },
-		include: { cliente: true, conceptos: true, pagos: true }
+		include: {
+			cliente: true,
+			conceptos: true,
+			pagos: true,
+			historial: { where: { estadoNuevo: 'APROBADA' }, select: { id: true }, take: 1 }
+		}
 	});
 
 	if (!cotizacion) {
@@ -47,15 +52,19 @@ export async function GET({ url }) {
 	}
 
 	if (verified.action === 'rechazar') {
-		if (cotizacion.estado === 'RECHAZADA') {
-			return htmlResponse('Cotizacion ya rechazada', 'Esta cotizacion ya habia sido rechazada.');
+		const yaFueAprobada =
+			['APROBADA', 'FACTURADA', 'PAGADA'].includes(cotizacion.estado) ||
+			cotizacion.historial.length > 0;
+
+		if (yaFueAprobada) {
+			return htmlResponse(
+				'Cotizacion ya aprobada',
+				'La cotización ya ha sido aprobada anteriormente, en caso de necesitar cancelación, póngase en contacto con nosotros.'
+			);
 		}
 
-		if (cotizacion.estado === 'PAGADA') {
-			return htmlResponse(
-				'Cotizacion cerrada',
-				'Esta cotizacion ya fue pagada y no puede rechazarse.'
-			);
+		if (cotizacion.estado === 'RECHAZADA') {
+			return htmlResponse('Cotizacion ya rechazada', 'Esta cotizacion ya habia sido rechazada.');
 		}
 
 		await prisma.cotizacion.update({
