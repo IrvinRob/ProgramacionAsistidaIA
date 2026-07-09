@@ -73,6 +73,8 @@ export function loadClerk(publishableKey) {
 
 	if (!clerkPromise) {
 		const frontendApi = getClerkFrontendApi(publishableKey);
+		const dashboardUrl = `${window.location.origin}/dashboard`;
+
 		clerkPromise = Promise.all([
 			loadClerkUi(frontendApi),
 			loadClerkScript(frontendApi, publishableKey)
@@ -81,7 +83,9 @@ export function loadClerk(publishableKey) {
 				ui: { ClerkUI },
 				signInUrl: '/login',
 				signUpUrl: '/login',
+				signInForceRedirectUrl: dashboardUrl,
 				signInFallbackRedirectUrl: '/dashboard',
+				signUpForceRedirectUrl: dashboardUrl,
 				signUpFallbackRedirectUrl: '/dashboard'
 			}).then(() => Clerk)
 		);

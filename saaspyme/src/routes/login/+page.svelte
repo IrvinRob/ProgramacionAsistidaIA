@@ -21,10 +21,14 @@
 					return;
 				}
 
+				const dashboardUrl = `${window.location.origin}${resolve('/dashboard')}`;
+
 				clerk.mountSignIn(authTarget, {
-					afterSignInUrl: resolve('/dashboard'),
-					afterSignUpUrl: resolve('/dashboard'),
-					signUpUrl: resolve('/login')
+					forceRedirectUrl: dashboardUrl,
+					fallbackRedirectUrl: dashboardUrl,
+					signUpForceRedirectUrl: dashboardUrl,
+					signUpFallbackRedirectUrl: dashboardUrl,
+					signUpUrl: `${window.location.origin}${resolve('/login')}`
 				});
 			})
 			.catch((cause) => {
