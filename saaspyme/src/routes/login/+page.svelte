@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { loadClerk } from '$lib/client/clerk.js';
 
 	let { data } = $props();
 	let authTarget = $state();
@@ -12,9 +13,9 @@
 
 		let clerk;
 
-		import('@clerk/clerk-js')
-			.then(({ Clerk }) => {
-				clerk = new Clerk(data.publishableKey);
+		loadClerk(data.publishableKey)
+			.then((loadedClerk) => {
+				clerk = loadedClerk;
 				return clerk.load();
 			})
 			.then(() => {

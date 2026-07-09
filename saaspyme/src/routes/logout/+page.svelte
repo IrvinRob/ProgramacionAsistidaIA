@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { loadClerk } from '$lib/client/clerk.js';
 
 	let { data } = $props();
 
@@ -11,9 +12,8 @@
 			return;
 		}
 
-		import('@clerk/clerk-js')
-			.then(async ({ Clerk }) => {
-				const clerk = new Clerk(data.publishableKey);
+		loadClerk(data.publishableKey)
+			.then(async (clerk) => {
 				await clerk.load();
 				await clerk.signOut();
 			})
