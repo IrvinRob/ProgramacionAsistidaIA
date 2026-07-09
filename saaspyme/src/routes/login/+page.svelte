@@ -29,7 +29,8 @@
 					signUpUrl: resolve('/login')
 				});
 			})
-			.catch(() => {
+			.catch((cause) => {
+				console.error('No se pudo cargar Clerk', cause);
 				error = 'No se pudo cargar Clerk. Revisa la llave publica.';
 			});
 
