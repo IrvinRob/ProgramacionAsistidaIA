@@ -18,13 +18,14 @@ function getClerkScriptUrl(publishableKey) {
 
 export function getClerkSignInUrl(publishableKey, redirectUrl) {
 	const frontendApi = getClerkFrontendApi(publishableKey);
+	const accountPortalHost = frontendApi.replace('.clerk.accounts.dev', '.accounts.dev');
 	const params = new URLSearchParams({
 		redirect_url: redirectUrl,
 		after_sign_in_url: redirectUrl,
 		after_sign_up_url: redirectUrl
 	});
 
-	return `https://${frontendApi}/sign-in?${params.toString()}`;
+	return `https://${accountPortalHost}/sign-in?${params.toString()}`;
 }
 
 export function loadClerk(publishableKey) {
