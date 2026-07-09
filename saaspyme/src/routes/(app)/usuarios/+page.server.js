@@ -5,7 +5,9 @@ import { requireAdmin } from '$lib/server/auth.js';
 const ROLES = new Set(['ADMIN', 'SOCIO', 'ASISTENTE']);
 
 function normalizeEmail(value) {
-	return String(value ?? '').trim().toLowerCase();
+	return String(value ?? '')
+		.trim()
+		.toLowerCase();
 }
 
 function normalizeText(value) {

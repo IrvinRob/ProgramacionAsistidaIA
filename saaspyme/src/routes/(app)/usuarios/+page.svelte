@@ -67,7 +67,9 @@
 
 	<div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
 		<table class="min-w-full divide-y divide-slate-200 text-sm">
-			<thead class="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+			<thead
+				class="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase"
+			>
 				<tr>
 					<th class="px-4 py-3">Usuario</th>
 					<th class="px-4 py-3">Correo</th>
@@ -104,7 +106,7 @@
 								name="rol"
 								class="w-full rounded-md border border-slate-300 px-2 py-1"
 							>
-								{#each roles as rol}
+								{#each roles as rol (rol.value)}
 									<option value={rol.value} selected={usuario.rol === rol.value}>
 										{rol.label}
 									</option>
@@ -115,9 +117,7 @@
 							<span
 								class={[
 									'inline-flex rounded-full px-2 py-1 text-xs font-medium',
-									usuario.activo
-										? 'bg-emerald-50 text-emerald-700'
-										: 'bg-slate-100 text-slate-600'
+									usuario.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
 								]}
 							>
 								{usuario.activo ? 'Activo' : 'Inactivo'}

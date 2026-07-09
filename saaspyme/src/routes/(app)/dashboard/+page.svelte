@@ -1,12 +1,67 @@
 <script>
+	import { Bar, Doughnut } from 'svelte-chartjs';
+	import {
+		BarElement,
+		CategoryScale,
+		Chart as ChartJS,
+		Legend,
+		LinearScale,
+		ArcElement,
+		Tooltip
+	} from 'chart.js';
+
 	let { data } = $props();
+
+	ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
 
-	const totalEstados = $derived(
-		data.cotsPorEstado.reduce((sum, item) => sum + item._count.estado, 0)
-	);
+	const estadoLabels = $derived(data.cotsPorEstado.map((item) => item.estado));
+	const estadoValues = $derived(data.cotsPorEstado.map((item) => item._count.estado));
+	const ingresosLabels = $derived(data.ingresosPorMes.map((item) => item.label));
+	const ingresosValues = $derived(data.ingresosPorMes.map((item) => item.total));
+
+	const ingresosChart = $derived({
+		labels: ingresosLabels,
+		datasets: [
+			{
+				label: 'Cobrado',
+				data: ingresosValues,
+				backgroundColor: '#0f172a',
+				borderRadius: 6
+			}
+		]
+	});
+	const estadosChart = $derived({
+		labels: estadoLabels,
+		datasets: [
+			{
+				data: estadoValues,
+				backgroundColor: ['#0f172a', '#2563eb', '#16a34a', '#dc2626', '#9333ea', '#64748b'],
+				borderWidth: 0
+			}
+		]
+	});
+	const chartOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		plugins: {
+			legend: { display: false },
+			tooltip: {
+				callbacks: {
+					label: (context) => formatMXN(context.parsed.y ?? context.parsed)
+				}
+			}
+		}
+	};
+	const doughnutOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		plugins: {
+			legend: { position: 'bottom' }
+		}
+	};
 </script>
 
 <svelte:head>
@@ -44,31 +99,39 @@
 		</div>
 	</div>
 
-	<div class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+	<div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
-			<h2 class="text-base font-semibold">Cotizaciones por estado</h2>
-			<div class="mt-4 space-y-3">
-				{#each data.cotsPorEstado as item (item.estado)}
-					<div>
-						<div class="flex items-center justify-between text-sm">
-							<span class="font-medium text-slate-700">{item.estado}</span>
-							<span class="text-slate-500">{item._count.estado}</span>
-						</div>
-						<div class="mt-2 h-2 rounded-full bg-slate-100">
-							<div
-								class="h-2 rounded-full bg-slate-900"
-								style={`width: ${totalEstados ? (item._count.estado / totalEstados) * 100 : 0}%`}
-							></div>
-						</div>
-					</div>
+			<h2 class="text-base font-semibold">Cobrado por mes</h2>
+			<div class="mt-4 h-72">
+				{#if data.ingresosPorMes.some((item) => item.total > 0)}
+					<Bar data={ingresosChart} options={chartOptions} />
 				{:else}
-					<p class="rounded-md border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-						Aun no hay cotizaciones para graficar.
+					<p
+						class="rounded-md border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500"
+					>
+						Aun no hay pagos para graficar.
 					</p>
-				{/each}
+				{/if}
 			</div>
 		</div>
 
+		<div class="rounded-lg border border-slate-200 bg-white p-5">
+			<h2 class="text-base font-semibold">Cotizaciones por estado</h2>
+			<div class="mt-4 h-72">
+				{#if data.cotsPorEstado.length}
+					<Doughnut data={estadosChart} options={doughnutOptions} />
+				{:else}
+					<p
+						class="rounded-md border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500"
+					>
+						Aun no hay cotizaciones para graficar.
+					</p>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+	<div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
 			<h2 class="text-base font-semibold">Ultimas cotizaciones</h2>
 			<div class="mt-4 overflow-hidden rounded-md border border-slate-200">
@@ -98,6 +161,29 @@
 						{/each}
 					</tbody>
 				</table>
+			</div>
+		</div>
+
+		<div class="rounded-lg border border-slate-200 bg-white p-5">
+			<h2 class="text-base font-semibold">Clientes con mayor pendiente</h2>
+			<div class="mt-4 space-y-3">
+				{#each data.topClientesPendiente as cliente (cliente.id)}
+					<div class="rounded-md border border-slate-200 p-4">
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<p class="font-medium text-slate-950">{cliente.nombre}</p>
+								<p class="text-sm text-slate-500">{cliente.empresa || 'Sin empresa'}</p>
+							</div>
+							<p class="text-right font-semibold">{formatMXN(cliente.pendiente)}</p>
+						</div>
+					</div>
+				{:else}
+					<p
+						class="rounded-md border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500"
+					>
+						No hay saldos pendientes.
+					</p>
+				{/each}
 			</div>
 		</div>
 	</div>

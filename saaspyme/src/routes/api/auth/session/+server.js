@@ -3,7 +3,9 @@ import { ensureUsuarioForSession, SESSION_COOKIE, verifySessionToken } from '$li
 
 export async function POST({ request, cookies }) {
 	const { token, profile } = await request.json().catch(() => ({ token: null, profile: null }));
-	console.info('[auth] Recibida solicitud de sincronizacion de sesion', { hasToken: Boolean(token) });
+	console.info('[auth] Recibida solicitud de sincronizacion de sesion', {
+		hasToken: Boolean(token)
+	});
 
 	const session = await verifySessionToken(token);
 
