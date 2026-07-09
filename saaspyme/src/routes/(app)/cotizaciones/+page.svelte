@@ -16,8 +16,7 @@
 		{ key: 'estado', label: 'Estado', class: 'px-4 py-3 text-left font-medium' },
 		{ key: 'fecha', label: 'Fecha', class: 'px-4 py-3 text-left font-medium' },
 		{ key: 'total', label: 'Total', class: 'px-4 py-3 text-right font-medium' },
-		{ key: 'pendiente', label: 'Pendiente', class: 'px-4 py-3 text-right font-medium' },
-		{ key: 'acciones', label: '', class: 'px-4 py-3 text-right font-medium' }
+		{ key: 'pendiente', label: 'Pendiente', class: 'px-4 py-3 text-right font-medium' }
 	];
 
 	function statusClass(estado) {
@@ -62,19 +61,15 @@
 				<tr>
 					{#each columns as column (column.key)}
 						<th class={column.class}>
-							{#if column.key === 'acciones'}
-								<span class="sr-only">Acciones</span>
-							{:else}
-								<a
-									href={resolve(sortHref(column.key))}
-									class={[
-										'inline-flex items-center gap-1 hover:text-slate-950',
-										column.key === 'total' || column.key === 'pendiente' ? 'justify-end' : ''
-									]}
-								>
-									{column.label}{sortMarker(column.key)}
-								</a>
-							{/if}
+							<a
+								href={resolve(sortHref(column.key))}
+								class={[
+									'inline-flex items-center gap-1 hover:text-slate-950',
+									column.key === 'total' || column.key === 'pendiente' ? 'justify-end' : ''
+								]}
+							>
+								{column.label}{sortMarker(column.key)}
+							</a>
 						</th>
 					{/each}
 				</tr>
@@ -90,29 +85,43 @@
 							</p>
 						</td>
 						<td class="px-4 py-3">
-							<span
-								class={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass(cotizacion.estado)}`}
-							>
-								{cotizacion.estado}
-							</span>
+							<div class="flex items-center gap-2">
+								<span
+									class={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass(cotizacion.estado)}`}
+								>
+									{cotizacion.estado}
+								</span>
+								{#if ['BORRADOR', 'ENVIADA'].includes(cotizacion.estado)}
+									<a
+										href={resolve(`/cotizaciones/${cotizacion.id}/editar`)}
+										class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+										aria-label={`Editar ${cotizacion.numero}`}
+										title="Editar"
+									>
+										<svg
+											aria-hidden="true"
+											class="h-4 w-4"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										>
+											<path d="M12 20h9" />
+											<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+										</svg>
+									</a>
+								{/if}
+							</div>
 						</td>
 						<td class="px-4 py-3">{formatDate(cotizacion.fecha)}</td>
 						<td class="px-4 py-3 text-right">{formatMXN(cotizacion.total)}</td>
 						<td class="px-4 py-3 text-right font-medium">{formatMXN(cotizacion.saldo)}</td>
-						<td class="px-4 py-3 text-right">
-							{#if ['BORRADOR', 'ENVIADA'].includes(cotizacion.estado)}
-								<a
-									href={resolve(`/cotizaciones/${cotizacion.id}/editar`)}
-									class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50"
-								>
-									Editar
-								</a>
-							{/if}
-						</td>
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="7" class="px-4 py-8 text-center text-slate-500">
+						<td colspan="6" class="px-4 py-8 text-center text-slate-500">
 							{emptyText}
 						</td>
 					</tr>
