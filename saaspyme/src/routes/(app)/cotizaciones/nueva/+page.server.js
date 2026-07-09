@@ -42,7 +42,7 @@ function parseConceptos(formData) {
 			precioUnitario: precios[index]
 		}))
 		.filter((concepto) => {
-			return concepto.descripcion || concepto.cantidad || concepto.precioUnitario;
+			return concepto.descripcion;
 		});
 }
 

@@ -2,7 +2,7 @@
 	let { data, form } = $props();
 
 	const today = new Date().toISOString().slice(0, 10);
-	let conceptos = $state([{ tipo: 'nuevo', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+	let conceptos = $state([{ tipo: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 
 	$effect(() => {
 		if (form?.values?.conceptos?.length) {
@@ -21,7 +21,7 @@
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
 
 	function agregarConcepto() {
-		conceptos = [...conceptos, { tipo: 'nuevo', descripcion: '', cantidad: 1, precioUnitario: 0 }];
+		conceptos = [...conceptos, { tipo: '', descripcion: '', cantidad: 1, precioUnitario: 0 }];
 	}
 
 	function quitarConcepto(index) {
@@ -30,6 +30,13 @@
 	}
 
 	function seleccionarConcepto(index, value) {
+		if (!value) {
+			conceptos[index].tipo = '';
+			conceptos[index].descripcion = '';
+			conceptos[index].precioUnitario = 0;
+			return;
+		}
+
 		if (value === 'nuevo') {
 			conceptos[index].tipo = 'nuevo';
 			conceptos[index].descripcion = '';
@@ -136,11 +143,13 @@
 							value={concepto.tipo === 'nuevo' ? 'nuevo' : concepto.descripcion}
 							onchange={(event) => seleccionarConcepto(index, event.currentTarget.value)}
 							class="rounded-md border border-slate-300 px-3 py-2 text-sm"
+							required
 						>
-							<option value="nuevo">Nuevo</option>
+							<option value="">Elija un concepto</option>
 							{#each data.conceptosGuardados as conceptoGuardado (conceptoGuardado.descripcion)}
 								<option value={conceptoGuardado.descripcion}>{conceptoGuardado.descripcion}</option>
 							{/each}
+							<option value="nuevo">Nuevo concepto</option>
 						</select>
 						{#if concepto.tipo === 'nuevo'}
 							<input
@@ -150,13 +159,16 @@
 								class="rounded-md border border-slate-300 px-3 py-2 text-sm"
 								required
 							/>
-						{:else}
+						{:else if concepto.tipo === 'guardado'}
 							<input
 								name="descripcion"
 								value={concepto.descripcion}
 								readonly
 								class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
 							/>
+						{:else}
+							<input type="hidden" name="descripcion" value="" />
+							<div class="hidden md:block"></div>
 						{/if}
 						<input
 							name="cantidad"

@@ -144,6 +144,14 @@
 		</button>
 	</form>
 
+	{#if data.emailError}
+		<p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+			La cotizacion se guardo, pero Resend no pudo enviar el correo. Revisa que RESEND_API_KEY,
+			FROM_EMAIL y PUBLIC_ORIGIN esten configurados en Render y que el remitente este verificado en
+			Resend.
+		</p>
+	{/if}
+
 	<div class="space-y-3">
 		<div>
 			<h2 class="mb-3 text-base font-semibold text-slate-950">Cotizaciones activas</h2>

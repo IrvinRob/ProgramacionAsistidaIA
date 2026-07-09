@@ -89,6 +89,8 @@ export async function load({ locals, url }) {
 		cotizacionesRechazadas: ordenadas.filter((cotizacion) => cotizacion.estado === 'RECHAZADA'),
 		q,
 		estado,
+		creada: url.searchParams.get('creada'),
+		emailError: url.searchParams.get('emailError') === '1',
 		sort,
 		dir,
 		estados: ESTADOS
