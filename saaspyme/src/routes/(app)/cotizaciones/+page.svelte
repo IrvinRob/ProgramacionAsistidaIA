@@ -16,7 +16,8 @@
 		{ key: 'estado', label: 'Estado', class: 'px-4 py-3 text-left font-medium' },
 		{ key: 'fecha', label: 'Fecha', class: 'px-4 py-3 text-left font-medium' },
 		{ key: 'total', label: 'Total', class: 'px-4 py-3 text-right font-medium' },
-		{ key: 'pendiente', label: 'Pendiente', class: 'px-4 py-3 text-right font-medium' }
+		{ key: 'pendiente', label: 'Pendiente', class: 'px-4 py-3 text-right font-medium' },
+		{ key: 'acciones', label: '', class: 'px-4 py-3 text-right font-medium' }
 	];
 
 	function statusClass(estado) {
@@ -61,15 +62,19 @@
 				<tr>
 					{#each columns as column (column.key)}
 						<th class={column.class}>
-							<a
-								href={resolve(sortHref(column.key))}
-								class={[
-									'inline-flex items-center gap-1 hover:text-slate-950',
-									column.key === 'total' || column.key === 'pendiente' ? 'justify-end' : ''
-								]}
-							>
-								{column.label}{sortMarker(column.key)}
-							</a>
+							{#if column.key === 'acciones'}
+								<span class="sr-only">Acciones</span>
+							{:else}
+								<a
+									href={resolve(sortHref(column.key))}
+									class={[
+										'inline-flex items-center gap-1 hover:text-slate-950',
+										column.key === 'total' || column.key === 'pendiente' ? 'justify-end' : ''
+									]}
+								>
+									{column.label}{sortMarker(column.key)}
+								</a>
+							{/if}
 						</th>
 					{/each}
 				</tr>
@@ -94,10 +99,20 @@
 						<td class="px-4 py-3">{formatDate(cotizacion.fecha)}</td>
 						<td class="px-4 py-3 text-right">{formatMXN(cotizacion.total)}</td>
 						<td class="px-4 py-3 text-right font-medium">{formatMXN(cotizacion.saldo)}</td>
+						<td class="px-4 py-3 text-right">
+							{#if ['BORRADOR', 'ENVIADA'].includes(cotizacion.estado)}
+								<a
+									href={resolve(`/cotizaciones/${cotizacion.id}/editar`)}
+									class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50"
+								>
+									Editar
+								</a>
+							{/if}
+						</td>
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="6" class="px-4 py-8 text-center text-slate-500">
+						<td colspan="7" class="px-4 py-8 text-center text-slate-500">
 							{emptyText}
 						</td>
 					</tr>
@@ -149,6 +164,18 @@
 			La cotizacion se guardo, pero Resend no pudo enviar el correo. Revisa que RESEND_API_KEY,
 			FROM_EMAIL y PUBLIC_ORIGIN esten configurados en Render y que el remitente este verificado en
 			Resend.
+		</p>
+	{/if}
+	{#if data.editada}
+		<p
+			class="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+		>
+			Cotizacion actualizada y enviada al cliente.
+		</p>
+	{/if}
+	{#if data.rechazadasPorVencimiento > 0}
+		<p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+			{data.rechazadasPorVencimiento} cotizacion(es) vencida(s) pasaron automaticamente a rechazadas.
 		</p>
 	{/if}
 

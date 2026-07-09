@@ -1,6 +1,7 @@
 import { prisma } from '$lib/server/prisma.js';
 import { requireUsuario } from '$lib/server/auth.js';
 import { calcularSaldo } from '$lib/server/cotizaciones.js';
+import { nextHistorialId } from '$lib/server/secuencias.js';
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'APROBADA', 'RECHAZADA', 'FACTURADA', 'PAGADA'];
 const SORTS = new Set(['numero', 'cliente', 'estado', 'fecha', 'total', 'pendiente']);
@@ -51,8 +52,45 @@ function sortValue(cotizacion, sort) {
 	return cotizacion[sort];
 }
 
+async function rechazarCotizacionesVencidas(usuario) {
+	const hoy = new Date();
+	hoy.setHours(0, 0, 0, 0);
+
+	const vencidas = await prisma.cotizacion.findMany({
+		where: {
+			estado: 'ENVIADA',
+			vencimiento: { lt: hoy }
+		},
+		select: { id: true, estado: true }
+	});
+
+	if (!vencidas.length) return 0;
+
+	await prisma.$transaction(async (tx) => {
+		for (const cotizacion of vencidas) {
+			await tx.cotizacion.updateMany({
+				where: { id: cotizacion.id, estado: 'ENVIADA' },
+				data: { estado: 'RECHAZADA' }
+			});
+			await tx.historialCot.create({
+				data: {
+					id: await nextHistorialId(tx),
+					cotizacionId: cotizacion.id,
+					estadoAnterior: cotizacion.estado,
+					estadoNuevo: 'RECHAZADA',
+					nota: 'Cotizacion rechazada automaticamente por vencimiento.',
+					clerkUserId: usuario.clerkUserId
+				}
+			});
+		}
+	});
+
+	return vencidas.length;
+}
+
 export async function load({ locals, url }) {
-	requireUsuario(locals);
+	const usuario = requireUsuario(locals);
+	const rechazadasPorVencimiento = await rechazarCotizacionesVencidas(usuario);
 
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const estado = url.searchParams.get('estado') ?? '';
@@ -90,6 +128,8 @@ export async function load({ locals, url }) {
 		q,
 		estado,
 		creada: url.searchParams.get('creada'),
+		editada: url.searchParams.get('editada'),
+		rechazadasPorVencimiento,
 		emailError: url.searchParams.get('emailError') === '1',
 		sort,
 		dir,
