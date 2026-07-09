@@ -12,7 +12,17 @@ export async function POST({ request, cookies }) {
 		return json({ ok: false, error: 'Sesion invalida' }, { status: 401 });
 	}
 
-	const usuario = await ensureUsuarioForSession(session.userId);
+	let usuario;
+
+	try {
+		usuario = await ensureUsuarioForSession(session.userId);
+	} catch (cause) {
+		console.error('[auth] No se pudo crear o enlazar el usuario local', {
+			userId: session.userId,
+			cause
+		});
+		return json({ ok: false, error: 'No se pudo crear el usuario local' }, { status: 500 });
+	}
 	console.info('[auth] Sesion de Clerk sincronizada', {
 		userId: session.userId,
 		hasUsuario: Boolean(usuario),

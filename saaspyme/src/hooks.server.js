@@ -9,7 +9,16 @@ export async function handle({ event, resolve }) {
 	event.locals.usuario = null;
 
 	if (event.locals.userId) {
-		event.locals.usuario = await ensureUsuarioForSession(event.locals.userId);
+		try {
+			event.locals.usuario = await ensureUsuarioForSession(event.locals.userId);
+		} catch (cause) {
+			console.error('[auth] No se pudo asegurar el usuario local', {
+				pathname: event.url.pathname,
+				userId: event.locals.userId,
+				cause
+			});
+			event.locals.usuario = null;
+		}
 	}
 
 	if (!event.locals.userId && !isPublicPath(event.url.pathname)) {
@@ -34,4 +43,15 @@ export async function handle({ event, resolve }) {
 	}
 
 	return resolve(event);
+}
+
+export function handleError({ error, event }) {
+	console.error('[server] Error no controlado', {
+		pathname: event.url.pathname,
+		error
+	});
+
+	return {
+		message: 'Error interno del servidor'
+	};
 }
