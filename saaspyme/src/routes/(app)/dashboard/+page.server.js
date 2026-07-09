@@ -5,10 +5,10 @@ const ESTADOS_VENTA = ['APROBADA', 'FACTURADA', 'PAGADA'];
 function emptyDashboard(error = null) {
 	return {
 		kpis: {
-			totalFacturado: 0,
+			totalVentas: 0,
+			totalFacturadoMes: 0,
 			totalCobrado: 0,
-			carteraPendiente: 0,
-			cotsActivas: 0
+			carteraPendiente: 0
 		},
 		cotsPorEstado: [],
 		ingresosPorMes: [],
@@ -51,7 +51,6 @@ export async function load() {
 			pagosMes,
 			pagosGrafica,
 			cotsPendientes,
-			cotsActivas,
 			ultimasCots,
 			cotsPorEstado,
 			clientesConCartera
@@ -67,9 +66,6 @@ export async function load() {
 			prisma.cotizacion.findMany({
 				where: { estado: { in: ['APROBADA', 'FACTURADA'] } },
 				include: { pagos: true, cliente: true }
-			}),
-			prisma.cotizacion.count({
-				where: { estado: { in: ['ENVIADA', 'APROBADA', 'FACTURADA'] } }
 			}),
 			prisma.cotizacion.findMany({
 				take: 5,
@@ -94,10 +90,13 @@ export async function load() {
 			})
 		]);
 
-		const totalFacturado = cotizacionesMes.reduce(
+		const totalVentas = cotizacionesMes.reduce(
 			(sum, cotizacion) => sum + Number(cotizacion.total),
 			0
 		);
+		const totalFacturadoMes = cotizacionesMes.reduce((sum, cotizacion) => {
+			return cotizacion.estado === 'FACTURADA' ? sum + Number(cotizacion.total) : sum;
+		}, 0);
 		const totalCobrado = pagosMes.reduce((sum, pago) => sum + Number(pago.monto), 0);
 		const carteraPendiente = cotsPendientes.reduce((sum, cotizacion) => {
 			const pagado = cotizacion.pagos.reduce((pagoSum, pago) => pagoSum + Number(pago.monto), 0);
@@ -141,10 +140,10 @@ export async function load() {
 
 		return {
 			kpis: {
-				totalFacturado,
+				totalVentas,
+				totalFacturadoMes,
 				totalCobrado,
-				carteraPendiente,
-				cotsActivas
+				carteraPendiente
 			},
 			cotsPorEstado: cotsPorEstado.map(serializeEstado),
 			ingresosPorMes,

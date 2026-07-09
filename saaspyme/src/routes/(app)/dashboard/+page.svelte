@@ -97,7 +97,11 @@
 	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
 			<p class="text-sm text-slate-500">Ventas del mes</p>
-			<p class="mt-2 text-2xl font-semibold">{formatMXN(data.kpis.totalFacturado)}</p>
+			<p class="mt-2 text-2xl font-semibold">{formatMXN(data.kpis.totalVentas)}</p>
+		</div>
+		<div class="rounded-lg border border-slate-200 bg-white p-5">
+			<p class="text-sm text-slate-500">Facturado en el mes</p>
+			<p class="mt-2 text-2xl font-semibold">{formatMXN(data.kpis.totalFacturadoMes)}</p>
 		</div>
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
 			<p class="text-sm text-slate-500">Cobrado este mes</p>
@@ -106,10 +110,6 @@
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
 			<p class="text-sm text-slate-500">Cartera pendiente</p>
 			<p class="mt-2 text-2xl font-semibold">{formatMXN(data.kpis.carteraPendiente)}</p>
-		</div>
-		<div class="rounded-lg border border-slate-200 bg-white p-5">
-			<p class="text-sm text-slate-500">Cotizaciones activas</p>
-			<p class="mt-2 text-2xl font-semibold">{data.kpis.cotsActivas}</p>
 		</div>
 	</div>
 
