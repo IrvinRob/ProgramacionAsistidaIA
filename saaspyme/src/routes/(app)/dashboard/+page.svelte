@@ -21,6 +21,14 @@
 	const estadoValues = $derived(data.cotsPorEstado.map((item) => item._count.estado));
 	const ingresosLabels = $derived(data.ingresosPorMes.map((item) => item.label));
 	const ingresosValues = $derived(data.ingresosPorMes.map((item) => item.total));
+	const estadoColors = {
+		RECHAZADA: '#dc2626',
+		PAGADA: '#9333ea',
+		FACTURADA: '#2563eb',
+		APROBADA: '#16a34a',
+		ENVIADA: '#fde047',
+		BORRADOR: '#f97316'
+	};
 
 	const ingresosChart = $derived({
 		labels: ingresosLabels,
@@ -38,7 +46,7 @@
 		datasets: [
 			{
 				data: estadoValues,
-				backgroundColor: ['#0f172a', '#2563eb', '#16a34a', '#dc2626', '#9333ea', '#64748b'],
+				backgroundColor: estadoLabels.map((estado) => estadoColors[estado] ?? '#475569'),
 				borderWidth: 0
 			}
 		]
