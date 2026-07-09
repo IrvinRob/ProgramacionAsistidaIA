@@ -1,23 +1,12 @@
 <script>
-	import { Doughnut } from 'svelte-chartjs';
-	import { ArcElement, Chart as ChartJS, Legend, Tooltip } from 'chart.js';
-
-	ChartJS.register(ArcElement, Tooltip, Legend);
-
 	let { data } = $props();
 
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
 
-	const estadoData = $derived({
-		labels: data.cotsPorEstado.map((item) => item.estado),
-		datasets: [
-			{
-				data: data.cotsPorEstado.map((item) => item._count.estado),
-				backgroundColor: ['#64748b', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0f766e']
-			}
-		]
-	});
+	const totalEstados = $derived(
+		data.cotsPorEstado.reduce((sum, item) => sum + item._count.estado, 0)
+	);
 </script>
 
 <svelte:head>
@@ -29,6 +18,12 @@
 		<h1 class="text-2xl font-semibold tracking-normal text-slate-950">Dashboard</h1>
 		<p class="mt-1 text-sm text-slate-500">Resumen financiero del despacho.</p>
 	</div>
+
+	{#if data.error}
+		<p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+			{data.error}
+		</p>
+	{/if}
 
 	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
@@ -52,8 +47,25 @@
 	<div class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
 			<h2 class="text-base font-semibold">Cotizaciones por estado</h2>
-			<div class="mt-4 min-h-72">
-				<Doughnut data={estadoData} />
+			<div class="mt-4 space-y-3">
+				{#each data.cotsPorEstado as item (item.estado)}
+					<div>
+						<div class="flex items-center justify-between text-sm">
+							<span class="font-medium text-slate-700">{item.estado}</span>
+							<span class="text-slate-500">{item._count.estado}</span>
+						</div>
+						<div class="mt-2 h-2 rounded-full bg-slate-100">
+							<div
+								class="h-2 rounded-full bg-slate-900"
+								style={`width: ${totalEstados ? (item._count.estado / totalEstados) * 100 : 0}%`}
+							></div>
+						</div>
+					</div>
+				{:else}
+					<p class="rounded-md border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+						Aun no hay cotizaciones para graficar.
+					</p>
+				{/each}
 			</div>
 		</div>
 
