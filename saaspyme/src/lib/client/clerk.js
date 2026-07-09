@@ -16,18 +16,6 @@ function getClerkScriptUrl(publishableKey) {
 	return `https://${frontendApi}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
 }
 
-export function getClerkSignInUrl(publishableKey, redirectUrl) {
-	const frontendApi = getClerkFrontendApi(publishableKey);
-	const accountPortalHost = frontendApi.replace('.clerk.accounts.dev', '.accounts.dev');
-	const params = new URLSearchParams({
-		redirect_url: redirectUrl,
-		after_sign_in_url: redirectUrl,
-		after_sign_up_url: redirectUrl
-	});
-
-	return `https://${accountPortalHost}/sign-in?${params.toString()}`;
-}
-
 export function loadClerk(publishableKey) {
 	if (!publishableKey) {
 		return Promise.reject(new Error('Falta PUBLIC_CLERK_PUBLISHABLE_KEY'));

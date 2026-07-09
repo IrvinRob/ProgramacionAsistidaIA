@@ -2,21 +2,16 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { getClerkSignInUrl, loadClerk } from '$lib/client/clerk.js';
+	import { loadClerk } from '$lib/client/clerk.js';
 
 	let { data } = $props();
 	let error = $state('');
 	let clerk = $state();
-	let signInUrl = $state('');
-	let redirecting = $state(false);
+	let loading = $state(true);
+	let submitting = $state(false);
 
 	$effect(() => {
 		if (!browser || !data.publishableKey) return;
-
-		signInUrl = getClerkSignInUrl(
-			data.publishableKey,
-			`${window.location.origin}${resolve('/dashboard')}`
-		);
 
 		loadClerk(data.publishableKey)
 			.then((loadedClerk) => {
@@ -28,15 +23,34 @@
 					goto(resolve('/dashboard'));
 					return;
 				}
-
-				redirecting = true;
-				window.location.href = signInUrl;
 			})
 			.catch((cause) => {
 				console.error('No se pudo cargar Clerk', cause);
 				error = 'No se pudo cargar Clerk. Revisa la llave publica.';
+			})
+			.finally(() => {
+				loading = false;
 			});
 	});
+
+	async function signInWithGoogle() {
+		if (!clerk?.client?.signIn) return;
+
+		submitting = true;
+		error = '';
+
+		try {
+			await clerk.client.signIn.sso({
+				strategy: 'oauth_google',
+				redirectUrl: `${window.location.origin}${resolve('/dashboard')}`,
+				redirectCallbackUrl: `${window.location.origin}${resolve('/login')}`
+			});
+		} catch (cause) {
+			console.error('No se pudo iniciar sesion con Google', cause);
+			error = 'No se pudo iniciar sesion con Google. Intenta de nuevo.';
+			submitting = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -64,16 +78,18 @@
 		<div class="w-full max-w-md">
 			{#if data.publishableKey}
 				<div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-					<h2 class="text-xl font-semibold">Abriendo acceso seguro</h2>
+					<h2 class="text-xl font-semibold">Iniciar sesion</h2>
 					<p class="mt-2 text-sm leading-6 text-slate-600">
-						Te estamos enviando a Clerk para iniciar sesion.
+						Usa tu cuenta de Google para acceder al panel de GestorPyme.
 					</p>
-					<a
-						href={signInUrl || undefined}
-						class="mt-6 inline-flex w-full justify-center rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+					<button
+						type="button"
+						class="mt-6 inline-flex w-full justify-center rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+						disabled={loading || submitting || !clerk}
+						onclick={signInWithGoogle}
 					>
-						{redirecting ? 'Redirigiendo...' : 'Abrir Clerk'}
-					</a>
+						{submitting ? 'Abriendo Google...' : loading ? 'Cargando...' : 'Continuar con Google'}
+					</button>
 				</div>
 				{#if error}
 					<p class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
