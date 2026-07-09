@@ -2,16 +2,21 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { loadClerk } from '$lib/client/clerk.js';
+	import { getClerkSignInUrl, loadClerk } from '$lib/client/clerk.js';
 
 	let { data } = $props();
 	let error = $state('');
 	let clerk = $state();
+	let signInUrl = $state('');
 	let loading = $state(true);
-	let redirecting = $state(false);
 
 	$effect(() => {
 		if (!browser || !data.publishableKey) return;
+
+		signInUrl = getClerkSignInUrl(
+			data.publishableKey,
+			`${window.location.origin}${resolve('/dashboard')}`
+		);
 
 		loadClerk(data.publishableKey)
 			.then((loadedClerk) => {
@@ -31,23 +36,6 @@
 				loading = false;
 			});
 	});
-
-	async function signInWithClerk() {
-		if (!clerk) return;
-
-		redirecting = true;
-		error = '';
-
-		try {
-			await clerk.redirectToSignIn({
-				redirectUrl: `${window.location.origin}${resolve('/dashboard')}`
-			});
-		} catch (cause) {
-			console.error('No se pudo iniciar sesion con Clerk', cause);
-			error = 'No se pudo iniciar sesion. Intenta de nuevo.';
-			redirecting = false;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -79,14 +67,13 @@
 					<p class="mt-2 text-sm leading-6 text-slate-600">
 						Continua con Clerk para acceder al panel de GestorPyme.
 					</p>
-					<button
-						type="button"
+					<a
+						href={signInUrl || undefined}
 						class="mt-6 w-full rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-						disabled={loading || redirecting || !clerk}
-						onclick={signInWithClerk}
+						aria-disabled={loading || !signInUrl || !clerk}
 					>
-						{redirecting ? 'Abriendo Clerk...' : loading ? 'Cargando...' : 'Continuar'}
-					</button>
+						{loading ? 'Cargando...' : 'Continuar'}
+					</a>
 				</div>
 				{#if error}
 					<p class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>

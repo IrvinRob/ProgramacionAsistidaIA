@@ -1,16 +1,30 @@
 let clerkPromise;
 
-function getClerkScriptUrl(publishableKey) {
+function getClerkFrontendApi(publishableKey) {
 	const encodedFrontendApi = publishableKey.replace(/^pk_(test|live)_/, '');
 	const padded = encodedFrontendApi.padEnd(
 		encodedFrontendApi.length + ((4 - (encodedFrontendApi.length % 4)) % 4),
 		'='
 	);
-	const frontendApi = atob(padded.replace(/-/g, '+').replace(/_/g, '/'))
+	return atob(padded.replace(/-/g, '+').replace(/_/g, '/'))
 		.replace(/^(test|live)_/, '')
 		.replace(/\$$/, '');
+}
 
+function getClerkScriptUrl(publishableKey) {
+	const frontendApi = getClerkFrontendApi(publishableKey);
 	return `https://${frontendApi}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
+}
+
+export function getClerkSignInUrl(publishableKey, redirectUrl) {
+	const frontendApi = getClerkFrontendApi(publishableKey);
+	const params = new URLSearchParams({
+		redirect_url: redirectUrl,
+		after_sign_in_url: redirectUrl,
+		after_sign_up_url: redirectUrl
+	});
+
+	return `https://${frontendApi}/sign-in?${params.toString()}`;
 }
 
 export function loadClerk(publishableKey) {
