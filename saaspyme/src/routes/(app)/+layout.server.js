@@ -5,7 +5,8 @@ export function load({ locals }) {
 				nombre: locals.usuario.nombre,
 				correo: locals.usuario.correo,
 				rol: locals.usuario.rol,
-				activo: locals.usuario.activo
+				activo: locals.usuario.activo,
+				imageUrl: locals.imageUrl
 			}
 		: null;
 

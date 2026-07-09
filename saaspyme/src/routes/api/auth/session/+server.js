@@ -37,13 +37,20 @@ export async function POST({ request, cookies }) {
 		rol: usuario?.rol ?? null
 	});
 
-	cookies.set(SESSION_COOKIE, createAppSessionToken(session), {
-		path: '/',
-		httpOnly: true,
-		secure: process.env.NODE_ENV === 'production',
-		sameSite: 'lax',
-		maxAge: APP_SESSION_MAX_AGE
-	});
+	cookies.set(
+		SESSION_COOKIE,
+		createAppSessionToken({
+			...session,
+			imageUrl: profile?.imageUrl ?? session.imageUrl
+		}),
+		{
+			path: '/',
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax',
+			maxAge: APP_SESSION_MAX_AGE
+		}
+	);
 
 	return json({
 		ok: true,

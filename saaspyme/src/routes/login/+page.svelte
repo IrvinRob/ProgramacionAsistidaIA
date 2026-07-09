@@ -32,7 +32,8 @@
 						token,
 						profile: {
 							correo: loadedClerk.user?.primaryEmailAddress?.emailAddress,
-							nombre: loadedClerk.user?.fullName
+							nombre: loadedClerk.user?.fullName,
+							imageUrl: loadedClerk.user?.imageUrl
 						}
 					})
 				});

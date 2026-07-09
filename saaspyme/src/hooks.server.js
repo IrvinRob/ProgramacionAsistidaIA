@@ -1,11 +1,20 @@
 import { redirect } from '@sveltejs/kit';
-import { ensureUsuarioForSession, isPublicPath, readSession } from '$lib/server/auth.js';
+import {
+	APP_SESSION_MAX_AGE,
+	createAppSessionToken,
+	ensureUsuarioForSession,
+	getClerkUserProfile,
+	isPublicPath,
+	readSession,
+	SESSION_COOKIE
+} from '$lib/server/auth.js';
 
 export async function handle({ event, resolve }) {
 	const session = await readSession(event);
 
 	event.locals.userId = session?.userId ?? null;
 	event.locals.sessionId = session?.sessionId ?? null;
+	event.locals.imageUrl = session?.imageUrl ?? null;
 	event.locals.usuario = null;
 
 	if (event.locals.userId) {
@@ -18,6 +27,36 @@ export async function handle({ event, resolve }) {
 				cause
 			});
 			event.locals.usuario = null;
+		}
+
+		if (event.locals.usuario && !event.locals.imageUrl) {
+			try {
+				const profile = await getClerkUserProfile(event.locals.userId);
+				event.locals.imageUrl = profile.imageUrl;
+
+				if (event.locals.imageUrl) {
+					event.cookies.set(
+						SESSION_COOKIE,
+						createAppSessionToken({
+							userId: event.locals.userId,
+							sessionId: event.locals.sessionId,
+							imageUrl: event.locals.imageUrl
+						}),
+						{
+							path: '/',
+							httpOnly: true,
+							secure: process.env.NODE_ENV === 'production',
+							sameSite: 'lax',
+							maxAge: APP_SESSION_MAX_AGE
+						}
+					);
+				}
+			} catch (cause) {
+				console.warn('[auth] No se pudo obtener foto de perfil de Clerk', {
+					userId: event.locals.userId,
+					cause
+				});
+			}
 		}
 	}
 

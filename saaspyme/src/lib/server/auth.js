@@ -32,7 +32,7 @@ function verifySignature(payload, signature) {
 	return timingSafeEqual(expected, actual);
 }
 
-export function createAppSessionToken({ userId, sessionId }) {
+export function createAppSessionToken({ userId, sessionId, imageUrl }) {
 	if (!CLERK_SECRET_KEY) {
 		throw new Error('Falta CLERK_SECRET_KEY para firmar la sesion');
 	}
@@ -41,6 +41,7 @@ export function createAppSessionToken({ userId, sessionId }) {
 		JSON.stringify({
 			userId,
 			sessionId,
+			imageUrl: imageUrl || null,
 			exp: Math.floor(Date.now() / 1000) + APP_SESSION_MAX_AGE
 		})
 	).toString('base64url');
@@ -68,7 +69,8 @@ function readAppSessionToken(token) {
 
 		return {
 			userId: session.userId,
-			sessionId: session.sessionId ?? null
+			sessionId: session.sessionId ?? null,
+			imageUrl: session.imageUrl ?? null
 		};
 	} catch (cause) {
 		console.warn('[auth] No se pudo leer la sesion interna', cause);
@@ -93,7 +95,8 @@ export async function readSession(event) {
 		const payload = await verifyToken(clerkToken, { secretKey: CLERK_SECRET_KEY });
 		return {
 			userId: payload.sub,
-			sessionId: payload.sid
+			sessionId: payload.sid,
+			imageUrl: payload.image_url ?? null
 		};
 	} catch (cause) {
 		console.warn('[auth] No se pudo validar la cookie de sesion', cause);
@@ -129,10 +132,14 @@ function normalizeProfile(profile) {
 		return null;
 	}
 
-	return { correo, nombre: nombre || correo };
+	return {
+		correo,
+		nombre: nombre || correo,
+		imageUrl: profile?.imageUrl ?? profile?.image_url ?? null
+	};
 }
 
-async function getClerkUserProfile(clerkUserId) {
+export async function getClerkUserProfile(clerkUserId) {
 	const response = await fetch(`https://api.clerk.com/v1/users/${clerkUserId}`, {
 		headers: {
 			Authorization: `Bearer ${CLERK_SECRET_KEY}`
@@ -160,7 +167,8 @@ async function getClerkUserProfile(clerkUserId) {
 
 	return {
 		nombre,
-		correo: correo.toLowerCase()
+		correo: correo.toLowerCase(),
+		imageUrl: user.image_url ?? null
 	};
 }
 

@@ -30,7 +30,8 @@
 						token,
 						profile: {
 							correo: clerk.user?.primaryEmailAddress?.emailAddress,
-							nombre: clerk.user?.fullName
+							nombre: clerk.user?.fullName,
+							imageUrl: clerk.user?.imageUrl
 						}
 					})
 				});

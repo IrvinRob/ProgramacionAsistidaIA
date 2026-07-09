@@ -34,12 +34,28 @@
 	<div class="min-w-0 lg:pl-64">
 		<div class="sticky top-0 z-20 max-w-full border-b border-slate-200 bg-white/90 backdrop-blur">
 			<header class="flex h-16 min-w-0 items-center justify-between gap-3 px-4 sm:px-6">
-				<div class="min-w-0">
-					<p class="text-sm text-slate-500">Sesion activa</p>
-					<p class="max-w-[180px] truncate text-sm font-medium text-slate-950 sm:max-w-none">
-						{data.usuario?.nombre}
-					</p>
-					<p class="text-xs text-slate-500">{data.usuario?.rol}</p>
+				<div class="flex min-w-0 items-center gap-3">
+					{#if data.usuario?.imageUrl}
+						<img
+							src={data.usuario.imageUrl}
+							alt=""
+							class="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
+							referrerpolicy="no-referrer"
+						/>
+					{:else}
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-600"
+						>
+							{data.usuario?.nombre?.charAt(0) ?? 'U'}
+						</div>
+					{/if}
+					<div class="min-w-0">
+						<p class="text-sm text-slate-500">Sesion activa</p>
+						<p class="max-w-[180px] truncate text-sm font-medium text-slate-950 sm:max-w-none">
+							{data.usuario?.nombre}
+						</p>
+						<p class="text-xs text-slate-500">{data.usuario?.rol}</p>
+					</div>
 				</div>
 				<a
 					href={resolve('/logout')}
