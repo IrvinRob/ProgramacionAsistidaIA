@@ -1,5 +1,7 @@
 import { prisma } from '$lib/server/prisma.js';
 
+const ESTADOS_VENTA = ['APROBADA', 'FACTURADA', 'PAGADA'];
+
 function emptyDashboard(error = null) {
 	return {
 		kpis: {
@@ -55,7 +57,7 @@ export async function load() {
 			clientesConCartera
 		] = await Promise.all([
 			prisma.cotizacion.findMany({
-				where: { estado: { not: 'BORRADOR' }, creadoEn: { gte: inicioMes } }
+				where: { estado: { in: ESTADOS_VENTA }, creadoEn: { gte: inicioMes } }
 			}),
 			prisma.pago.findMany({ where: { fecha: { gte: inicioMes } } }),
 			prisma.pago.findMany({

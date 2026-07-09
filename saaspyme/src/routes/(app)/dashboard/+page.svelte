@@ -82,7 +82,7 @@
 
 	<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
-			<p class="text-sm text-slate-500">Facturado este mes</p>
+			<p class="text-sm text-slate-500">Ventas del mes</p>
 			<p class="mt-2 text-2xl font-semibold">{formatMXN(data.kpis.totalFacturado)}</p>
 		</div>
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
