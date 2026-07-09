@@ -50,8 +50,9 @@ function valuesFromForm(formData) {
 	};
 }
 
-export async function load({ locals }) {
+export async function load({ locals, url }) {
 	requireUsuario(locals);
+	const selectedClienteId = url.searchParams.get('clienteId') ?? '';
 
 	const [clientes, conceptosGuardados] = await Promise.all([
 		prisma.cliente.findMany({
@@ -75,7 +76,7 @@ export async function load({ locals }) {
 		}
 	}
 
-	return { clientes, conceptosGuardados: [...conceptosMap.values()] };
+	return { clientes, conceptosGuardados: [...conceptosMap.values()], selectedClienteId };
 }
 
 export const actions = {

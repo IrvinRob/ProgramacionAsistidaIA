@@ -186,6 +186,12 @@
 			<h1 class="text-2xl font-semibold tracking-normal text-slate-950">Clientes</h1>
 			<p class="mt-1 text-sm text-slate-500">Alta, busqueda y seguimiento de clientes.</p>
 		</div>
+		<a
+			href={resolve('/cotizaciones/nueva')}
+			class="rounded-md bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white"
+		>
+			Nueva cotizacion
+		</a>
 	</div>
 
 	{#if data.created}

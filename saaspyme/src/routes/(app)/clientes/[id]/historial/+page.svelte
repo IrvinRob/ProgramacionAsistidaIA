@@ -25,12 +25,20 @@
 <section class="space-y-6">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 		<div class="min-w-0">
-			<a
-				href={resolve('/clientes')}
-				class="inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100"
-			>
-				Volver a clientes
-			</a>
+			<div class="flex flex-wrap gap-3">
+				<a
+					href={resolve('/clientes')}
+					class="inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100"
+				>
+					Volver a clientes
+				</a>
+				<a
+					href={resolve(`/cotizaciones/nueva?clienteId=${encodeURIComponent(data.cliente.id)}`)}
+					class="inline-flex rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+				>
+					Nueva cotizacion
+				</a>
+			</div>
 			<h1 class="mt-4 break-words text-2xl font-semibold tracking-normal text-slate-950">
 				Historial de {data.cliente.nombre}
 			</h1>

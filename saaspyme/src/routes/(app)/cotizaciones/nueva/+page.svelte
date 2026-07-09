@@ -4,6 +4,7 @@
 	let { data, form } = $props();
 
 	const today = todayCalendarDate();
+	const selectedClienteId = $derived(form?.values?.clienteId ?? data.selectedClienteId ?? '');
 	let conceptos = $state([{ tipo: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 	let isSubmitting = $state(false);
 
@@ -95,7 +96,7 @@
 				>
 					<option value="">Selecciona un cliente activo</option>
 					{#each data.clientes as cliente (cliente.id)}
-						<option value={cliente.id} selected={form?.values?.clienteId === cliente.id}>
+						<option value={cliente.id} selected={selectedClienteId === cliente.id}>
 							{cliente.nombre}{cliente.empresa ? ` - ${cliente.empresa}` : ''}
 						</option>
 					{/each}
