@@ -1,14 +1,25 @@
-const CLERK_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@6.24.0/dist/clerk.browser.js';
-
 let clerkPromise;
+
+function getClerkScriptUrl(publishableKey) {
+	const encodedFrontendApi = publishableKey.replace(/^pk_(test|live)_/, '');
+	const padded = encodedFrontendApi.padEnd(
+		encodedFrontendApi.length + ((4 - (encodedFrontendApi.length % 4)) % 4),
+		'='
+	);
+	const frontendApi = atob(padded.replace(/-/g, '+').replace(/_/g, '/'))
+		.replace(/^(test|live)_/, '')
+		.replace(/\$$/, '');
+
+	return `https://${frontendApi}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
+}
 
 export function loadClerk(publishableKey) {
 	if (!publishableKey) {
 		return Promise.reject(new Error('Falta PUBLIC_CLERK_PUBLISHABLE_KEY'));
 	}
 
-	if (globalThis.Clerk) {
-		return Promise.resolve(globalThis.Clerk);
+	if (window.Clerk) {
+		return Promise.resolve(window.Clerk);
 	}
 
 	if (!clerkPromise) {
@@ -17,10 +28,10 @@ export function loadClerk(publishableKey) {
 			script.async = true;
 			script.crossOrigin = 'anonymous';
 			script.dataset.clerkPublishableKey = publishableKey;
-			script.src = CLERK_SCRIPT_URL;
+			script.src = getClerkScriptUrl(publishableKey);
 			script.addEventListener('load', () => {
-				if (globalThis.Clerk) {
-					resolve(globalThis.Clerk);
+				if (window.Clerk) {
+					resolve(window.Clerk);
 				} else {
 					reject(new Error('Clerk no quedo disponible en window'));
 				}
