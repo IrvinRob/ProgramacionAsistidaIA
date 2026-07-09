@@ -25,11 +25,20 @@ function clienteWhere(q, activo) {
 }
 
 function serializeCliente(cliente) {
-	const totalFacturado = cliente.cotizaciones.reduce((sum, cotizacion) => {
+	const totalCotizado = cliente.cotizaciones.reduce((sum, cotizacion) => {
 		return sum + Number(cotizacion.total);
+	}, 0);
+	const totalFacturado = cliente.cotizaciones.reduce((sum, cotizacion) => {
+		return cotizacion.estado === 'FACTURADA' ? sum + Number(cotizacion.total) : sum;
 	}, 0);
 	const totalCobrado = cliente.cotizaciones.reduce((sum, cotizacion) => {
 		return sum + cotizacion.pagos.reduce((pagoSum, pago) => pagoSum + Number(pago.monto), 0);
+	}, 0);
+	const saldoPendiente = cliente.cotizaciones.reduce((sum, cotizacion) => {
+		if (!['APROBADA', 'FACTURADA'].includes(cotizacion.estado)) return sum;
+
+		const pagado = cotizacion.pagos.reduce((pagoSum, pago) => pagoSum + Number(pago.monto), 0);
+		return sum + Math.max(Number(cotizacion.total) - pagado, 0);
 	}, 0);
 
 	return {
@@ -43,9 +52,10 @@ function serializeCliente(cliente) {
 		notas: cliente.notas,
 		activo: cliente.activo,
 		creadoEn: cliente.creadoEn.toISOString(),
+		totalCotizado,
 		totalFacturado,
 		totalCobrado,
-		saldoPendiente: totalFacturado - totalCobrado,
+		saldoPendiente,
 		cotizaciones: cliente._count.cotizaciones
 	};
 }
@@ -69,6 +79,7 @@ export async function load({ locals, url }) {
 				_count: { select: { cotizaciones: true } },
 				cotizaciones: {
 					select: {
+						estado: true,
 						total: true,
 						pagos: { select: { monto: true } }
 					}
@@ -82,6 +93,7 @@ export async function load({ locals, url }) {
 				_count: { select: { cotizaciones: true } },
 				cotizaciones: {
 					select: {
+						estado: true,
 						total: true,
 						pagos: { select: { monto: true } }
 					}
@@ -207,6 +219,24 @@ export const actions = {
 		}
 
 		try {
+			if (!activo) {
+				const cotizacionesAbiertas = await prisma.cotizacion.count({
+					where: {
+						clienteId: id,
+						estado: { in: ['APROBADA', 'FACTURADA'] }
+					}
+				});
+
+				if (cotizacionesAbiertas > 0) {
+					return fail(400, {
+						errors: {
+							general:
+								'No se puede desactivar este cliente porque tiene cotizaciones aprobadas o facturadas.'
+						}
+					});
+				}
+			}
+
 			await prisma.cliente.update({
 				where: { id },
 				data: { activo }

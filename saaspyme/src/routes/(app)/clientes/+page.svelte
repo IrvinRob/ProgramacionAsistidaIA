@@ -39,8 +39,8 @@
 
 			<div class="grid gap-3 text-sm sm:grid-cols-3 lg:min-w-[360px]">
 				<div>
-					<p class="text-slate-500">Cotizaciones</p>
-					<p class="font-semibold text-slate-950">{cliente.cotizaciones}</p>
+					<p class="text-slate-500">Cotizado</p>
+					<p class="font-semibold text-slate-950">{formatMXN(cliente.totalCotizado)}</p>
 				</div>
 				<div>
 					<p class="text-slate-500">Facturado</p>
