@@ -104,8 +104,9 @@ export function templateFacturaEnviada({ cliente, cotizacion, conceptos, pagarUr
 					<p style="margin:0;color:#1f2937;font-size:20px;font-weight:bold;">Total: ${formatMXN(cotizacion.total)}</p>
 				</div>
 				<p style="margin-top:24px;">
-					<a href="${escapeHtml(pagarUrl)}" style="display:inline-block;background:#1f2937;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;">Pagar factura</a>
+					<a href="${escapeHtml(pagarUrl)}" style="display:inline-block;background:#1f2937;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:6px;">Liquidar factura</a>
 				</p>
+				<p style="color:#64748b;font-size:13px;margin-top:12px;">Si desea abonar una parte a su cuenta, contáctenos por teléfono o whatsapp.</p>
 			</div>
 		</div>
 	</body>

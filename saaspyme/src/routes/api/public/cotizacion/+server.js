@@ -1,6 +1,7 @@
 import { prisma } from '$lib/server/prisma.js';
 import { verifyCotizacionToken } from '$lib/server/cotizacionTokens.js';
 import { enviarFacturaCliente } from '$lib/server/cotizacionWorkflow.js';
+import { calcularSaldo } from '$lib/server/cotizaciones.js';
 
 function htmlResponse(title, message) {
 	return new Response(
@@ -37,7 +38,7 @@ export async function GET({ url }) {
 
 	const cotizacion = await prisma.cotizacion.findUnique({
 		where: { id: verified.cotizacionId },
-		include: { cliente: true, conceptos: true }
+		include: { cliente: true, conceptos: true, pagos: true }
 	});
 
 	if (!cotizacion) {
@@ -135,21 +136,53 @@ export async function GET({ url }) {
 			return htmlResponse('Factura no disponible', 'La cotizacion aun no esta lista para pago.');
 		}
 
-		await prisma.cotizacion.update({
-			where: { id: cotizacion.id },
-			data: {
-				estado: 'PAGADA',
-				historial: {
-					create: {
-						estadoAnterior: 'FACTURADA',
-						estadoNuevo: 'PAGADA',
-						nota: 'Cliente marco pago desde correo.'
+		const saldoPendiente = calcularSaldo(cotizacion);
+
+		if (saldoPendiente <= 0) {
+			await prisma.cotizacion.update({
+				where: { id: cotizacion.id },
+				data: {
+					estado: 'PAGADA',
+					historial: {
+						create: {
+							estadoAnterior: 'FACTURADA',
+							estadoNuevo: 'PAGADA',
+							nota: 'Factura sin saldo pendiente.'
+						}
 					}
 				}
-			}
+			});
+
+			return htmlResponse('Factura pagada', 'Esta factura ya no tenia saldo pendiente.');
+		}
+
+		await prisma.$transaction(async (tx) => {
+			await tx.pago.create({
+				data: {
+					cotizacionId: cotizacion.id,
+					monto: saldoPendiente,
+					fecha: new Date(),
+					metodo: 'TRANSFERENCIA',
+					referencia: 'Liquidacion desde correo'
+				}
+			});
+
+			await tx.cotizacion.update({
+				where: { id: cotizacion.id },
+				data: {
+					estado: 'PAGADA',
+					historial: {
+						create: {
+							estadoAnterior: 'FACTURADA',
+							estadoNuevo: 'PAGADA',
+							nota: `Cliente liquido factura desde correo por ${saldoPendiente}.`
+						}
+					}
+				}
+			});
 		});
 
-		return htmlResponse('Factura pagada', 'Registramos la factura como pagada. Gracias.');
+		return htmlResponse('Factura pagada', 'Registramos la liquidacion de la factura. Gracias.');
 	}
 
 	return htmlResponse('Accion no disponible', 'La accion solicitada no esta disponible.');
