@@ -67,7 +67,10 @@
 					fallbackRedirectUrl: dashboardUrl,
 					signUpForceRedirectUrl: dashboardUrl,
 					signUpFallbackRedirectUrl: dashboardUrl,
-					signUpUrl: `${window.location.origin}${resolve('/login')}`
+					signUpUrl: `${window.location.origin}${resolve('/login')}`,
+					withSignUp: true,
+					transferable: true,
+					oauthFlow: 'popup'
 				});
 			})
 			.catch((cause) => {

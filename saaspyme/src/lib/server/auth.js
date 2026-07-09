@@ -28,7 +28,8 @@ export async function readSession(event) {
 			userId: payload.sub,
 			sessionId: payload.sid
 		};
-	} catch {
+	} catch (cause) {
+		console.warn('[auth] No se pudo validar la cookie de sesion', cause);
 		return null;
 	}
 }
@@ -44,7 +45,8 @@ export async function verifySessionToken(token) {
 			userId: payload.sub,
 			sessionId: payload.sid
 		};
-	} catch {
+	} catch (cause) {
+		console.warn('[auth] No se pudo validar el token de Clerk', cause);
 		return null;
 	}
 }
@@ -57,6 +59,10 @@ async function getClerkUserProfile(clerkUserId) {
 	});
 
 	if (!response.ok) {
+		console.error('[auth] Clerk no devolvio el perfil del usuario', {
+			status: response.status,
+			clerkUserId
+		});
 		throw new Error('No se pudo consultar el usuario de Clerk');
 	}
 
@@ -81,6 +87,11 @@ export async function ensureUsuarioForSession(clerkUserId) {
 	const current = await prisma.usuario.findUnique({ where: { clerkUserId } });
 
 	if (current) {
+		console.info('[auth] Usuario encontrado por Clerk ID', {
+			id: current.id,
+			rol: current.rol,
+			activo: current.activo
+		});
 		return current.activo ? current : null;
 	}
 
@@ -88,6 +99,12 @@ export async function ensureUsuarioForSession(clerkUserId) {
 	const existing = await prisma.usuario.findUnique({ where: { correo: profile.correo } });
 
 	if (existing) {
+		console.info('[auth] Usuario encontrado por correo', {
+			id: existing.id,
+			rol: existing.rol,
+			activo: existing.activo
+		});
+
 		if (!existing.activo) {
 			return null;
 		}
@@ -104,6 +121,7 @@ export async function ensureUsuarioForSession(clerkUserId) {
 	const usuariosCount = await prisma.usuario.count();
 
 	if (usuariosCount === 0) {
+		console.info('[auth] Creando primer usuario como ADMIN', { correo: profile.correo });
 		return prisma.usuario.create({
 			data: {
 				clerkUserId,
