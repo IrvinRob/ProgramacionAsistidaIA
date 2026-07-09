@@ -5,52 +5,37 @@
 	import { loadClerk } from '$lib/client/clerk.js';
 
 	let { data } = $props();
+	let authTarget = $state();
 	let error = $state('');
-	let clerk = $state();
-	let loading = $state(true);
-	let submitting = $state(false);
 
 	$effect(() => {
-		if (!browser || !data.publishableKey) return;
+		if (!browser || !authTarget || !data.publishableKey) return;
 
+		let clerk;
 		loadClerk(data.publishableKey)
 			.then((loadedClerk) => {
 				clerk = loadedClerk;
-				return clerk.load();
-			})
-			.then(() => {
+
 				if (clerk.user) {
 					goto(resolve('/dashboard'));
 					return;
 				}
+
+				clerk.mountSignIn(authTarget, {
+					afterSignInUrl: resolve('/dashboard'),
+					afterSignUpUrl: resolve('/dashboard'),
+					signUpUrl: resolve('/login')
+				});
 			})
 			.catch((cause) => {
 				console.error('No se pudo cargar Clerk', cause);
 				error = 'No se pudo cargar Clerk. Revisa la llave publica.';
-			})
-			.finally(() => {
-				loading = false;
 			});
+
+		return () => {
+			clerk?.unmountSignIn(authTarget);
+		};
 	});
-
-	async function signInWithGoogle() {
-		if (!clerk?.client?.signIn) return;
-
-		submitting = true;
-		error = '';
-
-		try {
-			await clerk.client.signIn.sso({
-				strategy: 'oauth_google',
-				redirectUrl: `${window.location.origin}${resolve('/dashboard')}`,
-				redirectCallbackUrl: `${window.location.origin}${resolve('/login')}`
-			});
-		} catch (cause) {
-			console.error('No se pudo iniciar sesion con Google', cause);
-			error = 'No se pudo iniciar sesion con Google. Intenta de nuevo.';
-			submitting = false;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -77,20 +62,7 @@
 	<section class="flex items-center justify-center bg-white px-6 py-10 text-slate-950">
 		<div class="w-full max-w-md">
 			{#if data.publishableKey}
-				<div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-					<h2 class="text-xl font-semibold">Iniciar sesion</h2>
-					<p class="mt-2 text-sm leading-6 text-slate-600">
-						Usa tu cuenta de Google para acceder al panel de GestorPyme.
-					</p>
-					<button
-						type="button"
-						class="mt-6 inline-flex w-full justify-center rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-						disabled={loading || submitting || !clerk}
-						onclick={signInWithGoogle}
-					>
-						{submitting ? 'Abriendo Google...' : loading ? 'Cargando...' : 'Continuar con Google'}
-					</button>
-				</div>
+				<div bind:this={authTarget}></div>
 				{#if error}
 					<p class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
 				{/if}
