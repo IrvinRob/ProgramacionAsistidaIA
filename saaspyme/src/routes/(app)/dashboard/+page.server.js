@@ -14,6 +14,28 @@ function emptyDashboard(error = null) {
 	};
 }
 
+function serializeCotizacion(cotizacion) {
+	return {
+		id: cotizacion.id,
+		numero: cotizacion.numero,
+		estado: cotizacion.estado,
+		total: Number(cotizacion.total),
+		cliente: {
+			id: cotizacion.cliente.id,
+			nombre: cotizacion.cliente.nombre
+		}
+	};
+}
+
+function serializeEstado(item) {
+	return {
+		estado: item.estado,
+		_count: {
+			estado: item._count.estado
+		}
+	};
+}
+
 export async function load() {
 	const ahora = new Date();
 	const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
@@ -60,8 +82,8 @@ export async function load() {
 				carteraPendiente,
 				cotsActivas
 			},
-			cotsPorEstado,
-			ultimasCots,
+			cotsPorEstado: cotsPorEstado.map(serializeEstado),
+			ultimasCots: ultimasCots.map(serializeCotizacion),
 			error: null
 		};
 	} catch (cause) {
