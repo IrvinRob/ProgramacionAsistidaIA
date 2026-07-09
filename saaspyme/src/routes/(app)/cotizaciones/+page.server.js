@@ -2,6 +2,7 @@ import { prisma } from '$lib/server/prisma.js';
 import { requireUsuario } from '$lib/server/auth.js';
 import { calcularSaldo } from '$lib/server/cotizaciones.js';
 import { nextHistorialId } from '$lib/server/secuencias.js';
+import { toCalendarDate } from '$lib/dates.js';
 
 const ESTADOS = ['BORRADOR', 'ENVIADA', 'APROBADA', 'RECHAZADA', 'FACTURADA', 'PAGADA'];
 const SORTS = new Set(['numero', 'cliente', 'estado', 'fecha', 'total', 'pendiente']);
@@ -13,8 +14,8 @@ function serializeCotizacion(cotizacion) {
 		id: cotizacion.id,
 		numero: cotizacion.numero,
 		estado: cotizacion.estado,
-		fecha: cotizacion.fecha.toISOString(),
-		vencimiento: cotizacion.vencimiento?.toISOString() ?? null,
+		fecha: toCalendarDate(cotizacion.fecha),
+		vencimiento: toCalendarDate(cotizacion.vencimiento),
 		subtotal: Number(cotizacion.subtotal),
 		iva: Number(cotizacion.iva),
 		total: Number(cotizacion.total),

@@ -6,6 +6,7 @@ import { calcularTotales } from '$lib/server/cotizaciones.js';
 import { enviarCotizacionCliente } from '$lib/server/cotizacionWorkflow.js';
 import { nextConceptoIds, nextHistorialId } from '$lib/server/secuencias.js';
 import { conceptoSchema } from '$lib/server/validation.js';
+import { calendarDateWithCurrentTime, toCalendarDate } from '$lib/dates.js';
 
 const ESTADOS_EDITABLES = new Set(['BORRADOR', 'ENVIADA']);
 
@@ -22,7 +23,7 @@ function cleanOptional(value) {
 }
 
 function formatDateInput(value) {
-	return value ? value.toISOString().slice(0, 10) : '';
+	return toCalendarDate(value);
 }
 
 function parseConceptos(formData) {
@@ -177,7 +178,7 @@ export const actions = {
 			subtotal: Number(concepto.cantidad) * Number(concepto.precioUnitario)
 		}));
 		const totales = calcularTotales(conceptos);
-		const fecha = parsed.data.fecha;
+		const fecha = calendarDateWithCurrentTime(parsed.data.fecha);
 		const vencimiento = parsed.data.vencimiento ? new Date(parsed.data.vencimiento) : null;
 		let cotizacionEditada;
 

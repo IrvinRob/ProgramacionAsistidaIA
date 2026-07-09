@@ -3,6 +3,7 @@ import { verifyCotizacionToken } from '$lib/server/cotizacionTokens.js';
 import { enviarFacturaCliente } from '$lib/server/cotizacionWorkflow.js';
 import { calcularSaldo } from '$lib/server/cotizaciones.js';
 import { nextHistorialId, nextPagoId } from '$lib/server/secuencias.js';
+import { currentDateTimeInDefaultTimeZone } from '$lib/dates.js';
 
 function htmlResponse(title, message) {
 	return new Response(
@@ -176,7 +177,7 @@ export async function GET({ url }) {
 					id: await nextPagoId(tx),
 					cotizacionId: cotizacion.id,
 					monto: saldoPendiente,
-					fecha: new Date(),
+					fecha: currentDateTimeInDefaultTimeZone(),
 					metodo: 'TRANSFERENCIA',
 					referencia: 'Liquidacion desde correo'
 				}

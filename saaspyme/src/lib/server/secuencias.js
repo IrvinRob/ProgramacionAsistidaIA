@@ -15,7 +15,7 @@ async function nextPrefixedId(tx, model, prefix, pad = 4) {
 }
 
 export async function nextCotizacionIdentity(tx, fecha = new Date()) {
-	const year = fecha.getFullYear();
+	const year = fecha.getUTCFullYear();
 	const prefix = `COT-${year}-`;
 	const rows = await tx.cotizacion.findMany({
 		where: { numero: { startsWith: prefix } },

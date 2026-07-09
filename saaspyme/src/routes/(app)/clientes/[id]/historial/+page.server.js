@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
 import { requireUsuario } from '$lib/server/auth.js';
+import { toCalendarDate } from '$lib/dates.js';
 
 function serializeCotizacion(cotizacion) {
 	const pagado = cotizacion.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
@@ -12,8 +13,8 @@ function serializeCotizacion(cotizacion) {
 		id: cotizacion.id,
 		numero: cotizacion.numero,
 		estado: cotizacion.estado,
-		fecha: cotizacion.fecha.toISOString(),
-		vencimiento: cotizacion.vencimiento?.toISOString() ?? null,
+		fecha: toCalendarDate(cotizacion.fecha),
+		vencimiento: toCalendarDate(cotizacion.vencimiento),
 		subtotal: Number(cotizacion.subtotal),
 		iva: Number(cotizacion.iva),
 		total: Number(cotizacion.total),
@@ -28,7 +29,7 @@ function serializeCotizacion(cotizacion) {
 		})),
 		pagos: cotizacion.pagos.map((pago) => ({
 			id: pago.id,
-			fecha: pago.fecha.toISOString(),
+			fecha: toCalendarDate(pago.fecha),
 			monto: Number(pago.monto),
 			metodo: pago.metodo,
 			referencia: pago.referencia

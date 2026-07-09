@@ -1,7 +1,9 @@
 <script>
+	import { todayCalendarDate } from '$lib/dates.js';
+
 	let { data, form } = $props();
 
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayCalendarDate();
 	let conceptos = $state([{ tipo: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 	let isSubmitting = $state(false);
 

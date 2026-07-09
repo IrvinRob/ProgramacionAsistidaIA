@@ -6,6 +6,7 @@ import { pagoSchema } from '$lib/server/validation.js';
 import { sendEmail } from '$lib/server/email.js';
 import { templateRecordatorioPago } from '$lib/server/emailTemplates.js';
 import { nextHistorialId, nextPagoId } from '$lib/server/secuencias.js';
+import { calendarDateWithCurrentTime, toCalendarDate } from '$lib/dates.js';
 
 function daysSince(date) {
 	const ms = Date.now() - date.getTime();
@@ -30,14 +31,14 @@ function serializePendiente(cotizacion) {
 		id: cotizacion.id,
 		numero: cotizacion.numero,
 		estado: cotizacion.estado,
-		fecha: cotizacion.fecha.toISOString(),
+		fecha: toCalendarDate(cotizacion.fecha),
 		total: Number(cotizacion.total),
 		pagado,
 		pendiente,
 		dias: daysSince(cotizacion.fecha),
 		pagos: cotizacion.pagos.map((pago) => ({
 			id: pago.id,
-			fecha: pago.fecha.toISOString(),
+			fecha: toCalendarDate(pago.fecha),
 			monto: Number(pago.monto),
 			metodo: pago.metodo,
 			referencia: pago.referencia
@@ -100,6 +101,7 @@ export const actions = {
 		}
 
 		const nuevoSaldo = redondearMoneda(saldo - parsed.data.monto);
+		const fechaPago = calendarDateWithCurrentTime(parsed.data.fecha);
 
 		await prisma.$transaction(async (tx) => {
 			await tx.pago.create({
@@ -107,7 +109,7 @@ export const actions = {
 					id: await nextPagoId(tx),
 					cotizacionId: cotizacion.id,
 					monto: parsed.data.monto,
-					fecha: parsed.data.fecha,
+					fecha: fechaPago,
 					metodo: parsed.data.metodo,
 					referencia: parsed.data.referencia || null
 				}

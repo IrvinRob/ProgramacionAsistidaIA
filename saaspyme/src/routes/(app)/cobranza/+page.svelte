@@ -1,13 +1,12 @@
 <script>
+	import { formatCalendarDate, todayCalendarDate } from '$lib/dates.js';
+
 	let { data, form } = $props();
 
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayCalendarDate();
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
-	const formatDate = (value) =>
-		new Intl.DateTimeFormat('es-MX', { year: 'numeric', month: 'short', day: '2-digit' }).format(
-			new Date(value)
-		);
+	const formatDate = (value) => formatCalendarDate(value);
 
 	function agingClass(dias) {
 		if (dias > 30) return 'bg-red-50 text-red-700 border-red-200';

@@ -10,6 +10,7 @@ import {
 	nextCotizacionIdentity,
 	nextHistorialId
 } from '$lib/server/secuencias.js';
+import { calendarDateWithCurrentTime } from '$lib/dates.js';
 
 const cotizacionSchema = z.object({
 	clienteId: z.string().min(1, 'Selecciona un cliente'),
@@ -114,7 +115,7 @@ export const actions = {
 			subtotal: Number(concepto.cantidad) * Number(concepto.precioUnitario)
 		}));
 		const totales = calcularTotales(conceptos);
-		const fecha = parsed.data.fecha;
+		const fecha = calendarDateWithCurrentTime(parsed.data.fecha);
 		const vencimiento = parsed.data.vencimiento ? new Date(parsed.data.vencimiento) : null;
 		let cotizacionCreada;
 

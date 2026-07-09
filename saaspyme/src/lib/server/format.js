@@ -1,12 +1,8 @@
+import { formatCalendarDate } from '$lib/dates.js';
+
 export const mxnFormatter = new Intl.NumberFormat('es-MX', {
 	style: 'currency',
 	currency: 'MXN'
-});
-
-export const dateFormatter = new Intl.DateTimeFormat('es-MX', {
-	year: 'numeric',
-	month: 'short',
-	day: '2-digit'
 });
 
 export function formatMXN(value) {
@@ -15,5 +11,5 @@ export function formatMXN(value) {
 
 export function formatDate(value) {
 	if (!value) return '';
-	return dateFormatter.format(new Date(value));
+	return formatCalendarDate(value);
 }

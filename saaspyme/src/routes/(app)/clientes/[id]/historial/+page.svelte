@@ -1,18 +1,12 @@
 <script>
 	import { resolve } from '$app/paths';
+	import { formatCalendarDate } from '$lib/dates.js';
 
 	let { data } = $props();
 
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
-	const formatDate = (value) =>
-		value
-			? new Intl.DateTimeFormat('es-MX', {
-					year: 'numeric',
-					month: 'short',
-					day: '2-digit'
-				}).format(new Date(value))
-			: 'Sin fecha';
+	const formatDate = (value) => formatCalendarDate(value, 'Sin fecha');
 
 	const estadoClass = {
 		RECHAZADA: 'bg-red-600 text-white',

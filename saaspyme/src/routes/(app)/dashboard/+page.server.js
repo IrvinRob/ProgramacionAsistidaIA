@@ -1,4 +1,5 @@
 import { prisma } from '$lib/server/prisma.js';
+import { calendarMonthKey } from '$lib/dates.js';
 
 const ESTADOS_VENTA = ['APROBADA', 'FACTURADA', 'PAGADA'];
 
@@ -117,15 +118,13 @@ export async function load() {
 			};
 		});
 		cotizacionesGrafica.reduce((items, cotizacion) => {
-			const fecha = new Date(cotizacion.fecha);
-			const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+			const key = calendarMonthKey(cotizacion.fecha);
 			const item = items.find((mes) => mes.key === key);
 			if (item) item.ventas += Number(cotizacion.total);
 			return items;
 		}, meses);
 		const ingresosPorMes = pagosGrafica.reduce((items, pago) => {
-			const fecha = new Date(pago.fecha);
-			const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+			const key = calendarMonthKey(pago.fecha);
 			const item = items.find((mes) => mes.key === key);
 			if (item) item.total += Number(pago.monto);
 			return items;

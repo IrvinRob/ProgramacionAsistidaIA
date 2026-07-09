@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit';
-import { formatMXN } from './format.js';
+import { formatDate, formatMXN } from './format.js';
 
 export async function generarFacturaPdf({ cotizacion, cliente, conceptos, titulo = 'Factura' }) {
 	const doc = new PDFDocument({ margin: 48, size: 'LETTER' });
@@ -12,7 +12,7 @@ export async function generarFacturaPdf({ cotizacion, cliente, conceptos, titulo
 	doc.fontSize(10).fillColor('#475569').text(`Cliente: ${cliente.nombre}`);
 	if (cliente.empresa) doc.text(`Empresa: ${cliente.empresa}`);
 	doc.text(`Correo: ${cliente.correo}`);
-	doc.text(`Fecha: ${new Date(cotizacion.fecha).toLocaleDateString('es-MX')}`);
+	doc.text(`Fecha: ${formatDate(cotizacion.fecha)}`);
 	doc.moveDown(1);
 
 	doc.fillColor('#0f172a').fontSize(12).text('Desglose');

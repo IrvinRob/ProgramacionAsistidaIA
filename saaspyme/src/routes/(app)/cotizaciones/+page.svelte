@@ -1,14 +1,12 @@
 <script>
 	import { resolve } from '$app/paths';
+	import { formatCalendarDate } from '$lib/dates.js';
 
 	let { data } = $props();
 
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
-	const formatDate = (value) =>
-		new Intl.DateTimeFormat('es-MX', { year: 'numeric', month: 'short', day: '2-digit' }).format(
-			new Date(value)
-		);
+	const formatDate = (value) => formatCalendarDate(value);
 
 	const columns = [
 		{ key: 'numero', label: 'Numero', class: 'px-4 py-3 text-left font-medium' },
