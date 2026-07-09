@@ -8,7 +8,7 @@
 	let error = $state('');
 	let clerk = $state();
 	let signInUrl = $state('');
-	let loading = $state(true);
+	let redirecting = $state(false);
 
 	$effect(() => {
 		if (!browser || !data.publishableKey) return;
@@ -26,14 +26,15 @@
 			.then(() => {
 				if (clerk.user) {
 					goto(resolve('/dashboard'));
+					return;
 				}
+
+				redirecting = true;
+				window.location.href = signInUrl;
 			})
 			.catch((cause) => {
 				console.error('No se pudo cargar Clerk', cause);
 				error = 'No se pudo cargar Clerk. Revisa la llave publica.';
-			})
-			.finally(() => {
-				loading = false;
 			});
 	});
 </script>
@@ -63,16 +64,15 @@
 		<div class="w-full max-w-md">
 			{#if data.publishableKey}
 				<div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-					<h2 class="text-xl font-semibold">Iniciar sesion</h2>
+					<h2 class="text-xl font-semibold">Abriendo acceso seguro</h2>
 					<p class="mt-2 text-sm leading-6 text-slate-600">
-						Continua con Clerk para acceder al panel de GestorPyme.
+						Te estamos enviando a Clerk para iniciar sesion.
 					</p>
 					<a
 						href={signInUrl || undefined}
-						class="mt-6 w-full rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-						aria-disabled={loading || !signInUrl || !clerk}
+						class="mt-6 inline-flex w-full justify-center rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
 					>
-						{loading ? 'Cargando...' : 'Continuar'}
+						{redirecting ? 'Redirigiendo...' : 'Abrir Clerk'}
 					</a>
 				</div>
 				{#if error}
