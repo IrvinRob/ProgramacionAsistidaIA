@@ -17,8 +17,14 @@
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
 
-	const estadoLabels = $derived(data.cotsPorEstado.map((item) => item.estado));
-	const estadoValues = $derived(data.cotsPorEstado.map((item) => item._count.estado));
+	const estadoOrder = ['RECHAZADA', 'BORRADOR', 'ENVIADA', 'APROBADA', 'FACTURADA', 'PAGADA'];
+	const estadosOrdenados = $derived(
+		estadoOrder
+			.map((estado) => data.cotsPorEstado.find((item) => item.estado === estado))
+			.filter(Boolean)
+	);
+	const estadoLabels = $derived(estadosOrdenados.map((item) => item.estado));
+	const estadoValues = $derived(estadosOrdenados.map((item) => item._count.estado));
 	const ingresosLabels = $derived(data.ingresosPorMes.map((item) => item.label));
 	const ingresosValues = $derived(data.ingresosPorMes.map((item) => item.total));
 	const estadoColors = {
