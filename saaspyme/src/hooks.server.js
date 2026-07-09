@@ -22,11 +22,20 @@ export async function handle({ event, resolve }) {
 	}
 
 	if (!event.locals.userId && !isPublicPath(event.url.pathname)) {
-		redirect(303, '/login');
+		redirect(303, `/login?redirectTo=${encodeURIComponent(event.url.pathname + event.url.search)}`);
 	}
 
 	if (event.locals.userId && event.locals.usuario && event.url.pathname === '/login') {
-		redirect(303, '/dashboard');
+		const redirectTo = event.url.searchParams.get('redirectTo');
+		redirect(
+			303,
+			redirectTo &&
+				redirectTo.startsWith('/') &&
+				!redirectTo.startsWith('//') &&
+				!['/login', '/logout'].includes(redirectTo)
+				? redirectTo
+				: '/dashboard'
+		);
 	}
 
 	if (

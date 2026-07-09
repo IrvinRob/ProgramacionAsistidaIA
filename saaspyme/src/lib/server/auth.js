@@ -1,11 +1,13 @@
 import { verifyToken } from '@clerk/backend';
 import { CLERK_SECRET_KEY } from '$env/static/private';
 import { redirect } from '@sveltejs/kit';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { prisma } from '$lib/server/prisma.js';
 
 const PUBLIC_PATHS = new Set(['/login', '/logout', '/pendiente']);
 const ADMIN_ROLES = new Set(['ADMIN']);
 export const SESSION_COOKIE = 'gestorpyme_session';
+export const APP_SESSION_MAX_AGE = 60 * 60 * 8;
 
 export function isPublicPath(pathname) {
 	return (
@@ -15,15 +17,80 @@ export function isPublicPath(pathname) {
 	);
 }
 
-export async function readSession(event) {
-	const token = event.cookies.get(SESSION_COOKIE) ?? event.cookies.get('__session');
+function signSessionPayload(payload) {
+	return createHmac('sha256', CLERK_SECRET_KEY).update(payload).digest('base64url');
+}
 
+function verifySignature(payload, signature) {
+	const expected = Buffer.from(signSessionPayload(payload));
+	const actual = Buffer.from(signature);
+
+	if (expected.length !== actual.length) {
+		return false;
+	}
+
+	return timingSafeEqual(expected, actual);
+}
+
+export function createAppSessionToken({ userId, sessionId }) {
+	if (!CLERK_SECRET_KEY) {
+		throw new Error('Falta CLERK_SECRET_KEY para firmar la sesion');
+	}
+
+	const payload = Buffer.from(
+		JSON.stringify({
+			userId,
+			sessionId,
+			exp: Math.floor(Date.now() / 1000) + APP_SESSION_MAX_AGE
+		})
+	).toString('base64url');
+
+	return `${payload}.${signSessionPayload(payload)}`;
+}
+
+function readAppSessionToken(token) {
 	if (!token || !CLERK_SECRET_KEY) {
 		return null;
 	}
 
+	const [payload, signature] = token.split('.');
+
+	if (!payload || !signature || !verifySignature(payload, signature)) {
+		return null;
+	}
+
 	try {
-		const payload = await verifyToken(token, { secretKey: CLERK_SECRET_KEY });
+		const session = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+
+		if (!session.userId || session.exp < Math.floor(Date.now() / 1000)) {
+			return null;
+		}
+
+		return {
+			userId: session.userId,
+			sessionId: session.sessionId ?? null
+		};
+	} catch (cause) {
+		console.warn('[auth] No se pudo leer la sesion interna', cause);
+		return null;
+	}
+}
+
+export async function readSession(event) {
+	const appSession = readAppSessionToken(event.cookies.get(SESSION_COOKIE));
+
+	if (appSession) {
+		return appSession;
+	}
+
+	const clerkToken = event.cookies.get('__session');
+
+	if (!clerkToken || !CLERK_SECRET_KEY) {
+		return null;
+	}
+
+	try {
+		const payload = await verifyToken(clerkToken, { secretKey: CLERK_SECRET_KEY });
 		return {
 			userId: payload.sub,
 			sessionId: payload.sid

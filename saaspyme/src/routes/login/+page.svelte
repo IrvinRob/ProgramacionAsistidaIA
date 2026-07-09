@@ -42,7 +42,11 @@
 				}
 
 				const result = await response.json();
-				await goto(resolve(result.redirectTo ?? '/dashboard'), { invalidateAll: true });
+				const redirectTo =
+					result.redirectTo === '/dashboard'
+						? data.redirectTo
+						: (result.redirectTo ?? data.redirectTo);
+				await goto(resolve(redirectTo), { invalidateAll: true });
 			} catch (cause) {
 				console.error('No se pudo sincronizar Clerk', cause);
 				error = 'No se pudo completar el acceso. Intenta de nuevo.';

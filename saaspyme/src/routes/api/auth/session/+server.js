@@ -1,5 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { ensureUsuarioForSession, SESSION_COOKIE, verifySessionToken } from '$lib/server/auth.js';
+import {
+	APP_SESSION_MAX_AGE,
+	createAppSessionToken,
+	ensureUsuarioForSession,
+	SESSION_COOKIE,
+	verifySessionToken
+} from '$lib/server/auth.js';
 
 export async function POST({ request, cookies }) {
 	const { token, profile } = await request.json().catch(() => ({ token: null, profile: null }));
@@ -31,12 +37,12 @@ export async function POST({ request, cookies }) {
 		rol: usuario?.rol ?? null
 	});
 
-	cookies.set(SESSION_COOKIE, token, {
+	cookies.set(SESSION_COOKIE, createAppSessionToken(session), {
 		path: '/',
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax',
-		maxAge: 60 * 60
+		maxAge: APP_SESSION_MAX_AGE
 	});
 
 	return json({
