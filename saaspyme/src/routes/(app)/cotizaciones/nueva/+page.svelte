@@ -2,11 +2,11 @@
 	let { data, form } = $props();
 
 	const today = new Date().toISOString().slice(0, 10);
-	let conceptos = $state([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+	let conceptos = $state([{ tipo: 'nuevo', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 
 	$effect(() => {
 		if (form?.values?.conceptos?.length) {
-			conceptos = form.values.conceptos;
+			conceptos = form.values.conceptos.map((concepto) => ({ tipo: 'nuevo', ...concepto }));
 		}
 	});
 
@@ -21,12 +21,31 @@
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
 
 	function agregarConcepto() {
-		conceptos = [...conceptos, { descripcion: '', cantidad: 1, precioUnitario: 0 }];
+		conceptos = [...conceptos, { tipo: 'nuevo', descripcion: '', cantidad: 1, precioUnitario: 0 }];
 	}
 
 	function quitarConcepto(index) {
 		if (conceptos.length === 1) return;
 		conceptos = conceptos.filter((_, currentIndex) => currentIndex !== index);
+	}
+
+	function seleccionarConcepto(index, value) {
+		if (value === 'nuevo') {
+			conceptos[index].tipo = 'nuevo';
+			conceptos[index].descripcion = '';
+			conceptos[index].precioUnitario = 0;
+			return;
+		}
+
+		const conceptoGuardado = data.conceptosGuardados.find(
+			(concepto) => concepto.descripcion === value
+		);
+
+		if (conceptoGuardado) {
+			conceptos[index].tipo = 'guardado';
+			conceptos[index].descripcion = conceptoGuardado.descripcion;
+			conceptos[index].precioUnitario = conceptoGuardado.precioUnitario;
+		}
 	}
 </script>
 
@@ -111,15 +130,34 @@
 			<div class="space-y-3">
 				{#each conceptos as concepto, index (index)}
 					<div
-						class="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[1fr_120px_160px_100px]"
+						class="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[220px_1fr_120px_160px_100px]"
 					>
-						<input
-							name="descripcion"
-							bind:value={concepto.descripcion}
-							placeholder="Descripcion del servicio"
+						<select
+							value={concepto.tipo === 'nuevo' ? 'nuevo' : concepto.descripcion}
+							onchange={(event) => seleccionarConcepto(index, event.currentTarget.value)}
 							class="rounded-md border border-slate-300 px-3 py-2 text-sm"
-							required
-						/>
+						>
+							<option value="nuevo">Nuevo</option>
+							{#each data.conceptosGuardados as conceptoGuardado (conceptoGuardado.descripcion)}
+								<option value={conceptoGuardado.descripcion}>{conceptoGuardado.descripcion}</option>
+							{/each}
+						</select>
+						{#if concepto.tipo === 'nuevo'}
+							<input
+								name="descripcion"
+								bind:value={concepto.descripcion}
+								placeholder="Descripcion del servicio"
+								class="rounded-md border border-slate-300 px-3 py-2 text-sm"
+								required
+							/>
+						{:else}
+							<input
+								name="descripcion"
+								value={concepto.descripcion}
+								readonly
+								class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
+							/>
+						{/if}
 						<input
 							name="cantidad"
 							type="number"
@@ -135,7 +173,13 @@
 							step="0.01"
 							min="0"
 							bind:value={concepto.precioUnitario}
-							class="rounded-md border border-slate-300 px-3 py-2 text-sm"
+							readonly={concepto.tipo !== 'nuevo'}
+							class={[
+								'rounded-md border px-3 py-2 text-sm',
+								concepto.tipo === 'nuevo'
+									? 'border-slate-300'
+									: 'border-slate-200 bg-slate-50 text-slate-600'
+							]}
 							required
 						/>
 						<button
@@ -171,8 +215,19 @@
 					<span>Total</span>
 					<span>{formatMXN(total)}</span>
 				</div>
-				<button class="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+				<button
+					name="intent"
+					value="enviar"
+					class="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+				>
 					Crear cotizacion
+				</button>
+				<button
+					name="intent"
+					value="borrador"
+					class="w-full rounded-md border border-slate-300 px-4 py-2 text-sm font-medium"
+				>
+					Guardar borrador
 				</button>
 			</div>
 		</div>

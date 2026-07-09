@@ -4,6 +4,7 @@ import { prisma } from '$lib/server/prisma.js';
 import { requireUsuario } from '$lib/server/auth.js';
 import { calcularTotales } from '$lib/server/cotizaciones.js';
 import { conceptoSchema } from '$lib/server/validation.js';
+import { enviarCotizacionCliente } from '$lib/server/cotizacionWorkflow.js';
 
 const cotizacionSchema = z.object({
 	clienteId: z.string().min(1, 'Selecciona un cliente'),
@@ -58,13 +59,29 @@ function valuesFromForm(formData) {
 export async function load({ locals }) {
 	requireUsuario(locals);
 
-	const clientes = await prisma.cliente.findMany({
-		where: { activo: true },
-		orderBy: [{ nombre: 'asc' }],
-		select: { id: true, nombre: true, empresa: true, correo: true }
-	});
+	const [clientes, conceptosGuardados] = await Promise.all([
+		prisma.cliente.findMany({
+			where: { activo: true },
+			orderBy: [{ nombre: 'asc' }],
+			select: { id: true, nombre: true, empresa: true, correo: true }
+		}),
+		prisma.concepto.findMany({
+			orderBy: { id: 'desc' },
+			select: { descripcion: true, precioUnitario: true }
+		})
+	]);
+	const conceptosMap = new Map();
 
-	return { clientes };
+	for (const concepto of conceptosGuardados) {
+		if (!conceptosMap.has(concepto.descripcion)) {
+			conceptosMap.set(concepto.descripcion, {
+				descripcion: concepto.descripcion,
+				precioUnitario: Number(concepto.precioUnitario)
+			});
+		}
+	}
+
+	return { clientes, conceptosGuardados: [...conceptosMap.values()] };
 }
 
 export const actions = {
@@ -72,6 +89,8 @@ export const actions = {
 		const usuario = requireUsuario(locals);
 		const formData = await request.formData();
 		const values = valuesFromForm(formData);
+		const intent = String(formData.get('intent') ?? 'enviar');
+		const estadoInicial = intent === 'borrador' ? 'BORRADOR' : 'ENVIADA';
 		const parsed = cotizacionSchema.safeParse(values);
 
 		if (!parsed.success) {
@@ -85,7 +104,7 @@ export const actions = {
 
 		const cliente = await prisma.cliente.findUnique({
 			where: { id: parsed.data.clienteId },
-			select: { id: true, activo: true }
+			select: { id: true, nombre: true, empresa: true, correo: true, activo: true }
 		});
 
 		if (!cliente?.activo) {
@@ -104,7 +123,7 @@ export const actions = {
 		const totales = calcularTotales(conceptos);
 		const fecha = parsed.data.fecha;
 		const vencimiento = parsed.data.vencimiento ? new Date(parsed.data.vencimiento) : null;
-		let cotizacionId;
+		let cotizacionCreada;
 
 		try {
 			const cotizacion = await prisma.$transaction(async (tx) => {
@@ -113,6 +132,7 @@ export const actions = {
 					data: {
 						numero,
 						clienteId: parsed.data.clienteId,
+						estado: estadoInicial,
 						fecha,
 						vencimiento,
 						subtotal: totales.subtotal,
@@ -129,12 +149,24 @@ export const actions = {
 							}
 						}
 					},
-					select: { id: true }
+					include: { cliente: true, conceptos: true }
 				});
+
+				if (estadoInicial === 'ENVIADA') {
+					await tx.historialCot.create({
+						data: {
+							cotizacionId: creada.id,
+							estadoAnterior: 'BORRADOR',
+							estadoNuevo: 'ENVIADA',
+							nota: 'Cotizacion enviada al cliente.',
+							clerkUserId: usuario.clerkUserId
+						}
+					});
+				}
 
 				return creada;
 			});
-			cotizacionId = cotizacion.id;
+			cotizacionCreada = cotizacion;
 		} catch (cause) {
 			console.error('[cotizaciones] No se pudo crear cotizacion', cause);
 			return fail(500, {
@@ -143,6 +175,22 @@ export const actions = {
 			});
 		}
 
-		redirect(303, `/cotizaciones?creada=${cotizacionId}`);
+		if (estadoInicial === 'ENVIADA') {
+			const result = await enviarCotizacionCliente({
+				cotizacion: cotizacionCreada,
+				cliente,
+				conceptos: cotizacionCreada.conceptos
+			});
+
+			if (!result.ok) {
+				console.error('[cotizaciones] No se pudo enviar cotizacion automatica', {
+					cotizacionId: cotizacionCreada.id,
+					error: result.error
+				});
+				redirect(303, `/cotizaciones?creada=${cotizacionCreada.id}&emailError=1`);
+			}
+		}
+
+		redirect(303, `/cotizaciones?creada=${cotizacionCreada.id}`);
 	}
 };
