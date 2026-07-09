@@ -43,12 +43,26 @@ export async function verifySessionToken(token) {
 		const payload = await verifyToken(token, { secretKey: CLERK_SECRET_KEY });
 		return {
 			userId: payload.sub,
-			sessionId: payload.sid
+			sessionId: payload.sid,
+			claims: payload
 		};
 	} catch (cause) {
 		console.warn('[auth] No se pudo validar el token de Clerk', cause);
 		return null;
 	}
+}
+
+function normalizeProfile(profile) {
+	const correo = String(profile?.correo ?? profile?.email ?? '')
+		.trim()
+		.toLowerCase();
+	const nombre = String(profile?.nombre ?? profile?.name ?? correo).trim();
+
+	if (!correo) {
+		return null;
+	}
+
+	return { correo, nombre: nombre || correo };
 }
 
 async function getClerkUserProfile(clerkUserId) {
@@ -83,7 +97,7 @@ async function getClerkUserProfile(clerkUserId) {
 	};
 }
 
-export async function ensureUsuarioForSession(clerkUserId) {
+export async function ensureUsuarioForSession(clerkUserId, fallbackProfile = null) {
 	const current = await prisma.usuario.findUnique({ where: { clerkUserId } });
 
 	if (current) {
@@ -95,7 +109,23 @@ export async function ensureUsuarioForSession(clerkUserId) {
 		return current.activo ? current : null;
 	}
 
-	const profile = await getClerkUserProfile(clerkUserId);
+	let profile;
+
+	try {
+		profile = await getClerkUserProfile(clerkUserId);
+	} catch (cause) {
+		console.warn('[auth] Usando perfil alterno del cliente despues de falla con Clerk API', {
+			clerkUserId,
+			cause
+		});
+		profile = normalizeProfile(fallbackProfile);
+	}
+
+	if (!profile) {
+		console.warn('[auth] No hay correo disponible para enlazar usuario local', { clerkUserId });
+		return null;
+	}
+
 	const existing = await prisma.usuario.findUnique({ where: { correo: profile.correo } });
 
 	if (existing) {

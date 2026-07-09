@@ -28,7 +28,13 @@
 				const response = await fetch(resolve('/api/auth/session'), {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ token })
+					body: JSON.stringify({
+						token,
+						profile: {
+							correo: loadedClerk.user?.primaryEmailAddress?.emailAddress,
+							nombre: loadedClerk.user?.fullName
+						}
+					})
 				});
 
 				if (!response.ok) {

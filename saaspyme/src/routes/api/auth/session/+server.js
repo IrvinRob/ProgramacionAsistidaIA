@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import { ensureUsuarioForSession, SESSION_COOKIE, verifySessionToken } from '$lib/server/auth.js';
 
 export async function POST({ request, cookies }) {
-	const { token } = await request.json().catch(() => ({ token: null }));
+	const { token, profile } = await request.json().catch(() => ({ token: null, profile: null }));
 	console.info('[auth] Recibida solicitud de sincronizacion de sesion', { hasToken: Boolean(token) });
 
 	const session = await verifySessionToken(token);
@@ -15,7 +15,7 @@ export async function POST({ request, cookies }) {
 	let usuario;
 
 	try {
-		usuario = await ensureUsuarioForSession(session.userId);
+		usuario = await ensureUsuarioForSession(session.userId, profile);
 	} catch (cause) {
 		console.error('[auth] No se pudo crear o enlazar el usuario local', {
 			userId: session.userId,
