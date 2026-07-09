@@ -3,6 +3,7 @@
 
 	const today = new Date().toISOString().slice(0, 10);
 	let conceptos = $state([{ tipo: '', descripcion: '', cantidad: 1, precioUnitario: 0 }]);
+	let isSubmitting = $state(false);
 
 	$effect(() => {
 		if (form?.values?.conceptos?.length) {
@@ -54,6 +55,15 @@
 			conceptos[index].precioUnitario = conceptoGuardado.precioUnitario;
 		}
 	}
+
+	function bloquearDobleEnvio(event) {
+		if (isSubmitting) {
+			event.preventDefault();
+			return;
+		}
+
+		isSubmitting = true;
+	}
 </script>
 
 <svelte:head>
@@ -72,7 +82,7 @@
 		</p>
 	{/if}
 
-	<form method="POST" action="?/crear" class="space-y-6">
+	<form method="POST" action="?/crear" class="space-y-6" onsubmit={bloquearDobleEnvio}>
 		<div class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 md:grid-cols-3">
 			<label class="space-y-1 text-sm md:col-span-3">
 				<span class="font-medium text-slate-700">Cliente</span>
@@ -242,14 +252,25 @@
 				<button
 					name="intent"
 					value="enviar"
-					class="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+					disabled={isSubmitting}
+					aria-disabled={isSubmitting}
+					class={[
+						'w-full rounded-md px-4 py-2 text-sm font-medium text-white',
+						isSubmitting ? 'cursor-not-allowed bg-slate-400' : 'bg-slate-900'
+					]}
 				>
-					Crear cotizacion
+					{isSubmitting ? 'Enviando...' : 'Crear cotizacion'}
 				</button>
 				<button
 					name="intent"
 					value="borrador"
-					class="w-full rounded-md border border-slate-300 px-4 py-2 text-sm font-medium"
+					aria-disabled={isSubmitting}
+					class={[
+						'w-full rounded-md border px-4 py-2 text-sm font-medium',
+						isSubmitting
+							? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+							: 'border-slate-300'
+					]}
 				>
 					Guardar borrador
 				</button>
