@@ -1,9 +1,10 @@
 <script>
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { navItems } from '$lib/shared/nav.js';
+	import { visibleNavItems } from '$lib/shared/nav.js';
 
 	let { data, children } = $props();
+	let items = $derived(visibleNavItems(data.usuario));
 </script>
 
 <div class="min-h-screen bg-slate-50 text-slate-950">
@@ -12,7 +13,7 @@
 	>
 		<div class="px-2 text-lg font-semibold tracking-tight">GestorPyme</div>
 		<nav class="mt-8 space-y-1">
-			{#each navItems as item (item.href)}
+			{#each items as item (item.href)}
 				<a
 					href={resolve(item.href)}
 					class={[
@@ -35,8 +36,9 @@
 			<div>
 				<p class="text-sm text-slate-500">Sesion activa</p>
 				<p class="max-w-[220px] truncate text-sm font-medium text-slate-950 sm:max-w-none">
-					{data.userId}
+					{data.usuario?.nombre}
 				</p>
+				<p class="text-xs text-slate-500">{data.usuario?.rol}</p>
 			</div>
 			<a
 				href={resolve('/logout')}
@@ -47,7 +49,7 @@
 		</header>
 
 		<nav class="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-			{#each navItems as item (item.href)}
+			{#each items as item (item.href)}
 				<a
 					href={resolve(item.href)}
 					class={[

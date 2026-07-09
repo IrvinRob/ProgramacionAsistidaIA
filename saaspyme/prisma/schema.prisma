@@ -103,6 +103,20 @@ model RecordatorioPago {
   @@index([correo, enviadoEn])
 }
 
+model Usuario {
+  id             String      @id @default(cuid())
+  clerkUserId    String?     @unique
+  nombre         String
+  correo         String      @unique
+  rol            RolUsuario  @default(ASISTENTE)
+  activo         Boolean     @default(true)
+  creadoEn       DateTime    @default(now())
+  actualizadoEn  DateTime    @updatedAt
+
+  @@index([activo, rol])
+  @@index([nombre])
+}
+
 enum EstadoCot {
   BORRADOR
   ENVIADA
@@ -117,4 +131,10 @@ enum MetodoPago {
   EFECTIVO
   CHEQUE
   TARJETA
+}
+
+enum RolUsuario {
+  ADMIN
+  SOCIO
+  ASISTENTE
 }
