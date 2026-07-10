@@ -37,7 +37,7 @@
 				);
 
 				ctx.beginPath();
-				ctx.strokeStyle = estadoColors[estado] ?? '#0f172a';
+				ctx.strokeStyle = '#0f172a';
 				ctx.arc(x, y, outerRadius + 14, startAngle, endAngle);
 				ctx.stroke();
 			});
