@@ -13,7 +13,48 @@
 
 	let { data } = $props();
 
-	ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
+	const estadosActivos = new Set(['ENVIADA', 'APROBADA', 'FACTURADA']);
+	const activeRingPlugin = {
+		id: 'activeRing',
+		afterDatasetDraw(chart, args) {
+			if (args.index !== 0) return;
+
+			const meta = chart.getDatasetMeta(0);
+			const labels = chart.data.labels ?? [];
+			const ctx = chart.ctx;
+
+			ctx.save();
+			ctx.lineWidth = 10;
+			ctx.lineCap = 'butt';
+
+			meta.data.forEach((arc, index) => {
+				const estado = labels[index];
+				if (!estadosActivos.has(estado)) return;
+
+				const { x, y, startAngle, endAngle, outerRadius } = arc.getProps(
+					['x', 'y', 'startAngle', 'endAngle', 'outerRadius'],
+					true
+				);
+
+				ctx.beginPath();
+				ctx.strokeStyle = estadoColors[estado] ?? '#0f172a';
+				ctx.arc(x, y, outerRadius + 14, startAngle, endAngle);
+				ctx.stroke();
+			});
+
+			ctx.restore();
+		}
+	};
+
+	ChartJS.register(
+		CategoryScale,
+		LinearScale,
+		BarElement,
+		ArcElement,
+		Tooltip,
+		Legend,
+		activeRingPlugin
+	);
 
 	const formatMXN = (value) =>
 		new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value ?? 0);
@@ -26,6 +67,11 @@
 	);
 	const estadoLabels = $derived(estadosOrdenados.map((item) => item.estado));
 	const estadoValues = $derived(estadosOrdenados.map((item) => item._count.estado));
+	const cotizacionesActivas = $derived(
+		estadosOrdenados.reduce((sum, item) => {
+			return estadosActivos.has(item.estado) ? sum + item._count.estado : sum;
+		}, 0)
+	);
 	const ingresosLabels = $derived(data.ingresosPorMes.map((item) => item.label));
 	const ventasValues = $derived(data.ingresosPorMes.map((item) => item.ventas));
 	const ingresosValues = $derived(data.ingresosPorMes.map((item) => item.total));
@@ -80,8 +126,10 @@
 	const doughnutOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
+		cutout: '42%',
+		layout: { padding: 18 },
 		plugins: {
-			legend: { position: 'bottom' }
+			legend: { display: false }
 		}
 	};
 </script>
@@ -139,7 +187,7 @@
 
 		<div class="rounded-lg border border-slate-200 bg-white p-5">
 			<h2 class="text-base font-semibold">Cotizaciones por estado</h2>
-			<div class="mt-4 h-72">
+			<div class="mt-4 h-64">
 				{#if data.cotsPorEstado.length}
 					<Doughnut data={estadosChart} options={doughnutOptions} />
 				{:else}
@@ -150,6 +198,33 @@
 					</p>
 				{/if}
 			</div>
+			{#if data.cotsPorEstado.length}
+				<div class="mt-4 flex flex-col items-center gap-3">
+					<div class="flex items-center gap-3 text-center text-slate-900">
+						<span
+							class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-lg font-semibold text-white"
+						>
+							{cotizacionesActivas}
+						</span>
+						<span
+							class="text-xs font-semibold uppercase leading-tight tracking-wide text-slate-700"
+						>
+							Cotizaciones<br />activas
+						</span>
+					</div>
+					<div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-slate-600">
+						{#each estadosOrdenados as item (item.estado)}
+							<div class="flex items-center gap-2">
+								<span
+									class="h-3 w-8 rounded-sm"
+									style={`background-color: ${estadoColors[item.estado] ?? '#475569'}`}
+								></span>
+								<span>{item.estado}</span>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 
