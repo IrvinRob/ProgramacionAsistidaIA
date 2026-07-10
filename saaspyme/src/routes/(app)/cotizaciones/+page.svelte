@@ -46,6 +46,8 @@
 		if (data.sort !== key) return '';
 		return data.dir === 'asc' ? ' ↑' : ' ↓';
 	}
+
+	const editableEstados = ['BORRADOR', 'ENVIADA'];
 </script>
 
 <svelte:head>
@@ -53,7 +55,75 @@
 </svelte:head>
 
 {#snippet cotizacionesTable(cotizaciones, emptyText)}
-	<div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+	<div class="space-y-3 md:hidden">
+		{#each cotizaciones as cotizacion (cotizacion.id)}
+			<div class="rounded-lg border border-slate-200 bg-white p-4">
+				<div class="flex flex-col gap-3">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div class="min-w-0">
+							<p class="break-words text-lg font-semibold text-slate-950">{cotizacion.numero}</p>
+							<p class="mt-1 break-words text-sm text-slate-950">{cotizacion.cliente.nombre}</p>
+							<p class="break-words text-sm text-slate-500">
+								{cotizacion.cliente.empresa || `${cotizacion.conceptos} conceptos`}
+							</p>
+						</div>
+						<div class="flex shrink-0 items-center gap-2">
+							<span
+								class={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass(cotizacion.estado)}`}
+							>
+								{cotizacion.estado}
+							</span>
+							{#if editableEstados.includes(cotizacion.estado)}
+								<a
+									href={resolve(`/cotizaciones/${cotizacion.id}/editar`)}
+									class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+									aria-label={`Editar ${cotizacion.numero}`}
+									title="Editar"
+								>
+									<svg
+										aria-hidden="true"
+										class="h-4 w-4"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M12 20h9" />
+										<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+									</svg>
+								</a>
+							{/if}
+						</div>
+					</div>
+
+					<div class="grid gap-3 text-sm sm:grid-cols-3">
+						<div>
+							<p class="text-slate-500">Fecha</p>
+							<p class="font-semibold text-slate-950">{formatDate(cotizacion.fecha)}</p>
+						</div>
+						<div>
+							<p class="text-slate-500">Total</p>
+							<p class="font-semibold text-slate-950">{formatMXN(cotizacion.total)}</p>
+						</div>
+						<div>
+							<p class="text-slate-500">Pendiente</p>
+							<p class="font-semibold text-slate-950">{formatMXN(cotizacion.saldo)}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		{:else}
+			<p
+				class="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500"
+			>
+				{emptyText}
+			</p>
+		{/each}
+	</div>
+
+	<div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white md:block">
 		<table class="w-full text-left text-sm">
 			<thead class="bg-slate-50 text-slate-500">
 				<tr>
@@ -89,7 +159,7 @@
 								>
 									{cotizacion.estado}
 								</span>
-								{#if ['BORRADOR', 'ENVIADA'].includes(cotizacion.estado)}
+								{#if editableEstados.includes(cotizacion.estado)}
 									<a
 										href={resolve(`/cotizaciones/${cotizacion.id}/editar`)}
 										class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-950"
