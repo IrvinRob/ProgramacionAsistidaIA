@@ -1,12 +1,14 @@
 <script>
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import AssistantWidget from '$lib/components/AssistantWidget.svelte';
 	import { visibleNavItems } from '$lib/shared/nav.js';
 
 	let { data, children } = $props();
 	let items = $derived(visibleNavItems(data.usuario));
-	let primaryItems = $derived(items.filter((item) => item.href !== '/usuarios'));
-	let secondaryItems = $derived(items.filter((item) => item.href === '/usuarios'));
+	const mobileSecondary = new Set(['/usuarios', '/engagement']);
+	let primaryItems = $derived(items.filter((item) => !mobileSecondary.has(item.href)));
+	let secondaryItems = $derived(items.filter((item) => mobileSecondary.has(item.href)));
 </script>
 
 <div class="min-h-screen bg-slate-50 text-slate-950">
@@ -103,4 +105,6 @@
 
 		<main class="min-w-0 px-4 py-6 sm:px-6 lg:px-8">{@render children()}</main>
 	</div>
+
+	<AssistantWidget usuario={data.usuario} morphcastLicenseKey={data.morphcastLicenseKey} />
 </div>

@@ -23,3 +23,7 @@ services:
         sync: false
       - key: PUBLIC_ORIGIN
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PUBLIC_MORPHCAST_LICENSE_KEY
+        sync: false

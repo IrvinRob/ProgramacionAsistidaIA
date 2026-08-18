@@ -3,6 +3,7 @@ export const navItems = [
 	{ href: '/clientes', label: 'Clientes' },
 	{ href: '/cotizaciones', label: 'Cotizaciones' },
 	{ href: '/cobranza', label: 'Cobranza' },
+	{ href: '/engagement', label: 'Engagement' },
 	{ href: '/usuarios', label: 'Usuarios', roles: ['ADMIN'] }
 ];
 

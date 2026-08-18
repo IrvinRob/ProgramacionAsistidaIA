@@ -54,6 +54,16 @@ export async function POST({ request, cookies }) {
 
 	return json({
 		ok: true,
-		redirectTo: usuario ? '/dashboard' : '/pendiente'
+		redirectTo: usuario ? '/dashboard' : '/pendiente',
+		usuario: usuario
+			? {
+					id: usuario.id,
+					nombre: usuario.nombre,
+					correo: usuario.correo,
+					rol: usuario.rol,
+					activo: usuario.activo,
+					imageUrl: profile?.imageUrl ?? session.claims?.image_url ?? null
+				}
+			: null
 	});
 }

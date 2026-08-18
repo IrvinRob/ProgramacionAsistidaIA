@@ -13,7 +13,8 @@ export function isPublicPath(pathname) {
 	return (
 		PUBLIC_PATHS.has(pathname) ||
 		pathname.startsWith('/api/public') ||
-		pathname.startsWith('/api/auth')
+		pathname.startsWith('/api/auth') ||
+		pathname.startsWith('/api/v1')
 	);
 }
 

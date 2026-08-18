@@ -6,11 +6,74 @@ import {
 	getClerkUserProfile,
 	isPublicPath,
 	readSession,
-	SESSION_COOKIE
+	SESSION_COOKIE,
+	verifySessionToken
 } from '$lib/server/auth.js';
 
+const MOBILE_API_PREFIXES = ['/api/auth', '/api/v1'];
+
+function isMobileApiPath(pathname) {
+	return MOBILE_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function buildCorsHeaders(request) {
+	const origin = request.headers.get('origin');
+	const headers = new Headers();
+
+	if (origin) {
+		headers.set('Access-Control-Allow-Origin', origin);
+		headers.set('Vary', 'Origin');
+	} else {
+		headers.set('Access-Control-Allow-Origin', '*');
+	}
+
+	headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+	headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept');
+	headers.set('Access-Control-Max-Age', '86400');
+
+	return headers;
+}
+
+function applyCors(request, response) {
+	const headers = buildCorsHeaders(request);
+	headers.forEach((value, key) => {
+		response.headers.set(key, value);
+	});
+	return response;
+}
+
+async function readBearerSession(request) {
+	const header = request.headers.get('authorization') ?? '';
+	const match = header.match(/^Bearer\s+(.+)$/i);
+
+	if (!match) {
+		return null;
+	}
+
+	const session = await verifySessionToken(match[1].trim());
+
+	if (!session) {
+		return null;
+	}
+
+	return {
+		userId: session.userId,
+		sessionId: session.sessionId ?? null,
+		imageUrl: session.claims?.image_url ?? null
+	};
+}
+
 export async function handle({ event, resolve }) {
-	const session = await readSession(event);
+	if (isMobileApiPath(event.url.pathname)) {
+		if (event.request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: buildCorsHeaders(event.request)
+			});
+		}
+	}
+
+	const session = (await readSession(event)) ?? (await readBearerSession(event.request));
 
 	event.locals.userId = session?.userId ?? null;
 	event.locals.sessionId = session?.sessionId ?? null;
@@ -90,7 +153,13 @@ export async function handle({ event, resolve }) {
 		redirect(303, '/dashboard');
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+
+	if (isMobileApiPath(event.url.pathname)) {
+		return applyCors(event.request, response);
+	}
+
+	return response;
 }
 
 export function handleError({ error, event }) {

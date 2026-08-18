@@ -104,17 +104,59 @@ model RecordatorioPago {
 }
 
 model Usuario {
-  id             String      @id @default(cuid())
-  clerkUserId    String?     @unique
-  nombre         String
-  correo         String      @unique
-  rol            RolUsuario  @default(ASISTENTE)
-  activo         Boolean     @default(true)
-  creadoEn       DateTime    @default(now())
-  actualizadoEn  DateTime    @updatedAt
+  id                  String              @id @default(cuid())
+  clerkUserId         String?             @unique
+  nombre              String
+  correo              String              @unique
+  rol                 RolUsuario          @default(ASISTENTE)
+  activo              Boolean             @default(true)
+  creadoEn            DateTime            @default(now())
+  actualizadoEn       DateTime            @updatedAt
+  sesionesEngagement  SesionEngagement[]
 
   @@index([activo, rol])
   @@index([nombre])
+}
+
+model SesionEngagement {
+  id              String                   @id @default(cuid())
+  usuarioId       String
+  usuario         Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rutaInicio      String
+  inicioEn        DateTime                 @default(now())
+  finEn           DateTime?
+  camaraActiva    Boolean                  @default(true)
+  lecturas        LecturaEmocion[]
+  intervenciones  IntervencionAsistente[]
+
+  @@index([usuarioId, inicioEn])
+}
+
+model LecturaEmocion {
+  id                String            @id @default(cuid())
+  sesionId          String
+  sesion            SesionEngagement  @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  emocionDominante  String?
+  emociones         Json
+  atencion          Float?
+  ruta              String
+  motivo            MotivoLectura
+  creadoEn          DateTime          @default(now())
+
+  @@index([sesionId, creadoEn])
+  @@index([ruta, creadoEn])
+}
+
+model IntervencionAsistente {
+  id                  String            @id @default(cuid())
+  sesionId            String
+  sesion              SesionEngagement  @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  tipo                TipoIntervencion
+  emocionDisparadora  String?
+  respuestaClaude     String
+  creadoEn            DateTime          @default(now())
+
+  @@index([sesionId, creadoEn])
 }
 
 enum EstadoCot {
@@ -137,4 +179,17 @@ enum RolUsuario {
   ADMIN
   SOCIO
   ASISTENTE
+}
+
+enum MotivoLectura {
+  SESSION_START
+  POST_RESPONSE
+  MILESTONE
+  SESSION_END
+}
+
+enum TipoIntervencion {
+  SALUDO_INICIAL
+  OFERTA_AYUDA
+  ACLARACION
 }

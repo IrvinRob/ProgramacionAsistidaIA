@@ -1,3 +1,5 @@
+import { env } from '$env/dynamic/public';
+
 export function load({ locals }) {
 	const usuario = locals.usuario
 		? {
@@ -12,6 +14,7 @@ export function load({ locals }) {
 
 	return {
 		userId: locals.userId,
-		usuario
+		usuario,
+		morphcastLicenseKey: env.PUBLIC_MORPHCAST_LICENSE_KEY ?? ''
 	};
 }

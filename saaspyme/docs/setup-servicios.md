@@ -64,7 +64,39 @@ Intervencion tuya:
 5. Para produccion, agrega y verifica tu dominio.
 6. Cuando el dominio este verificado, cambia `FROM_EMAIL` a algo como `noreply@tudominio.com`.
 
-## 4. Cuando Termines
+## 4. Anthropic (asistente por texto)
+
+```env
+ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+Intervencion tuya:
+
+1. Crear o abrir tu cuenta en Anthropic.
+2. Copiar la API key.
+3. Pegarla en `ANTHROPIC_API_KEY`.
+
+## 5. MorphCast (emociones en el navegador)
+
+La license key se usa en el frontend porque el SDK corre en el browser.
+
+```env
+PUBLIC_MORPHCAST_LICENSE_KEY="..."
+```
+
+Intervencion tuya:
+
+1. Registrarte en https://www.morphcast.com y obtener una license key (trial 60 dias o licencia academica).
+2. Pegarla en `PUBLIC_MORPHCAST_LICENSE_KEY`.
+3. En produccion (Render) agregar la misma variable. MorphCast requiere HTTPS.
+
+Despues de pegar las keys, ejecuta la migracion de engagement:
+
+```sh
+npm run db:deploy
+```
+
+## 6. Cuando Termines
 
 Avísame cuando hayas pegado los valores reales en `.env`.
 

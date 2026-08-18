@@ -29,6 +29,8 @@ CLERK_SECRET_KEY="sk_test_xxxxxxxxxxxxxxxxxxxxx"
 RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxx"
 FROM_EMAIL="onboarding@resend.dev"
 PUBLIC_ORIGIN="http://localhost:5173"
+ANTHROPIC_API_KEY="sk-ant-xxxxxxxxxxxxxxxxxxxxx"
+PUBLIC_MORPHCAST_LICENSE_KEY="xxxxxxxxxxxxxxxxxxxxx"
 ```
 
 ## Desarrollo local
